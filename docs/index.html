@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PixZClaw — cobre em PIX ou USDC no Telegram</title>
+<meta name="description" content="Uma fatura, dois trilhos de pagamento. Cobre em PIX (BRL) ou USDC (Solana Pay) direto do Telegram, rodando num Raspberry Pi.">
+<meta property="og:title" content="PixZClaw — cobre em PIX ou USDC no Telegram">
+<meta property="og:description" content="Uma fatura, dois trilhos de pagamento. Cobre em PIX (BRL) ou USDC (Solana Pay) direto do Telegram, rodando num Raspberry Pi.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%9E%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main" data-i18n="a11y.skip">Pular para o conteúdo</a>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand__claw" aria-hidden="true">🦞</span>
+      <span class="brand__name">PixZClaw</span>
+    </div>
+    <div class="topbar__actions">
+      <div class="lang-toggle" role="group" aria-label="Escolha de idioma / Language choice">
+        <button type="button" class="lang-btn is-active" data-lang-btn="pt" aria-pressed="true">PT</button>
+        <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="gh-link" href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener" aria-label="Ver repositório no GitHub" data-i18n-aria="a11y.ghLink">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.09 3.29 9.4 7.86 10.93.57.1.78-.25.78-.55v-2.14c-3.2.7-3.87-1.36-3.87-1.36-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.05 11.05 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.77.11 3.06.74.8 1.19 1.83 1.19 3.09 0 4.43-2.7 5.4-5.27 5.69.42.36.78 1.08.78 2.18v3.23c0 .3.21.66.79.55A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="dual-rail-bg" aria-hidden="true">
+      <svg class="rail-svg" viewBox="0 0 1080 520" preserveAspectRatio="none" fill="none">
+        <defs>
+          <linearGradient id="solgrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#9945FF" />
+            <stop offset="100%" stop-color="#14F195" />
+          </linearGradient>
+        </defs>
+        <path class="rail-path rail-path--pix" d="M-20,120 C 260,110 380,260 560,270 S 900,270 1100,260" />
+        <path class="rail-path rail-path--sol" d="M-20,420 C 260,410 380,290 560,280 S 900,280 1100,290" />
+      </svg>
+    </div>
+    <div class="wrap hero__inner">
+      <div class="hero__copy">
+        <p class="eyebrow" data-i18n="hero.eyebrow">Plugin ZeroClaw · T0/T1 · sem private key</p>
+        <h1 data-i18n="hero.headline">Cobra em BRL, receba em PIX ou USDC.</h1>
+        <p class="hero__sub" data-i18n="hero.sub">Uma fatura, dois trilhos de pagamento. Seu cliente escolhe PIX (BRL) ou USDC (Solana Pay) — você opera tudo pelo Telegram, num Raspberry Pi de R$ 200.</p>
+        <div class="hero__ctas">
+          <a class="btn btn--primary" href="#instalacao" data-i18n="hero.ctaPrimary">Instalar no meu Pi</a>
+          <a class="btn btn--ghost" href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener" data-i18n="hero.ctaSecondary">Ver no GitHub</a>
+        </div>
+      </div>
+
+      <div class="hero__mock" aria-hidden="false">
+        <div class="chat-window">
+          <div class="chat-window__header">
+            <span class="chat-window__avatar">🦞</span>
+            <div>
+              <div class="chat-window__title">PixZClaw Bot 🦞</div>
+              <div class="chat-window__status">online</div>
+            </div>
+          </div>
+          <div class="chat-window__body">
+            <div class="bubble bubble--out">
+              <span data-i18n="hero.chat.merchant">Cobra R$ 150 do João, pedido 412</span>
+            </div>
+            <div class="bubble bubble--in">
+              <div class="invoice-card">
+                <div class="invoice-card__title">🦞 <span data-i18n="hero.chat.invoiceTitle">PixZClaw — Fatura #412</span></div>
+                <div class="invoice-card__amount">💰 <span data-i18n="hero.chat.amount">R$ 150.00 · ₮ 27.27 USDC</span></div>
+                <div class="rail-chips">
+                  <span class="chip chip--pix">🇧🇷 PIX</span>
+                  <span class="chip chip--sol">◎ Solana Pay</span>
+                </div>
+                <div class="invoice-card__pix">
+                  <code>00020126…5204000053039865802BR…6304AB12</code>
+                </div>
+                <div class="invoice-card__note" data-i18n="hero.chat.forward">👉 Encaminhe esta mensagem ao cliente</div>
+                <div class="invoice-card__lock">🔒 <span data-i18n="hero.chat.lock">teto R$ 1000 · destino travado</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rail-divider" aria-hidden="true"></div>
+
+  <!-- COMO FUNCIONA -->
+  <section class="section" id="como-funciona">
+    <div class="wrap">
+      <h2 class="reveal" data-i18n="how.title">Como funciona</h2>
+      <div class="grid grid--3">
+        <div class="step-card reveal">
+          <div class="step-card__num">01</div>
+          <h3 data-i18n="how.step1.title">Cobre no chat.</h3>
+          <p data-i18n="how.step1.body">Você diz o valor em BRL no Telegram e o PixZClaw emite a fatura dual na hora.</p>
+        </div>
+        <div class="step-card reveal">
+          <div class="step-card__num">02</div>
+          <h3 data-i18n="how.step2.title">Cliente escolhe o trilho.</h3>
+          <p data-i18n="how.step2.body">Encaminhe a mensagem: ele paga por PIX (BRL) ou por USDC (Solana Pay) — mesma fatura, mesmo valor.</p>
+        </div>
+        <div class="step-card reveal">
+          <div class="step-card__num">03</div>
+          <h3 data-i18n="how.step3.title">Confira e comprove.</h3>
+          <p data-i18n="how.step3.body">O PixZClaw verifica o USDC on-chain, gera recibo e fecha seu caixa do dia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rail-divider" aria-hidden="true"></div>
+
+  <!-- FERRAMENTAS -->
+  <section class="section" id="ferramentas">
+    <div class="wrap">
+      <h2 class="reveal" data-i18n="tools.title">As 3 ferramentas</h2>
+      <div class="grid grid--3">
+
+        <article class="tool-card reveal">
+          <div class="tool-card__head">
+            <span class="tier-badge tier-badge--t1">T1</span>
+            <code class="tool-card__name">brl_usdc_invoice</code>
+          </div>
+          <p class="tool-card__tier" data-i18n="tools.t1.tier">emite fatura</p>
+          <p data-i18n="tools.t1.desc">Emite uma fatura com dois trilhos: PIX Copia e Cola (EMV+CRC16 de verdade) e URL Solana Pay em USDC, com o mesmo invoice_id nos dois. QR codes por link, teto de valor e destino travado — pronto para encaminhar ao cliente.</p>
+          <pre><code data-i18n="tools.t1.output">🦞 PixZClaw — Fatura #412
+💰 R$ 150.00 · ₮ 27.272727 USDC
+
+🇧🇷 PIX (BRL)
+📷 QR (toque): …
+Ou copie o código (toque para copiar):
+00020126…5204000053039865802BR…6304AB12
+
+◎ Solana Pay (USDC)
+📷 QR (toque): …
+Escaneie com Phantom/Solflare.
+
+👉 Encaminhe esta mensagem ao cliente
+🧾 Fatura 412 · cotação R$/USDC usada: 5.5
+🔒 teto R$ 1000 · destino travado=sim</code></pre>
+        </article>
+
+        <article class="tool-card reveal">
+          <div class="tool-card__head">
+            <span class="tier-badge tier-badge--t0" tabindex="0">T0<span class="tooltip" data-i18n="tools.t0tooltip">read-only</span></span>
+            <code class="tool-card__name">invoice_status</code>
+          </div>
+          <p class="tool-card__tier" data-i18n="tools.t2.tier">só leitura</p>
+          <p data-i18n="tools.t2.desc">Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu e responde PAID ✅, UNDERPAID ⚠️ (mostra quanto falta) ou OVERPAID. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo PT-BR com link do Solscan.</p>
+          <pre><code data-i18n="tools.t2.output">INVOICE: inv-412
+USDC: PAID ✅ (recebido 27.27 de 27.27 USDC)
+EXPLORER: https://solscan.io/tx/…
+OVERALL: USDC PAID (valor conferido); PIX não confirmado
+──────────────────────
+🧾 RECIBO — INVOICE #inv-412
+✅ Pago em USDC (Solana)
+Valor: 27.27 USDC (R$ equivalente na fatura)
+Data: 2026-07-21 22:13 UTC
+🔗 https://solscan.io/tx/…
+──────────────────────</code></pre>
+        </article>
+
+        <article class="tool-card reveal">
+          <div class="tool-card__head">
+            <span class="tier-badge tier-badge--t0" tabindex="0">T0<span class="tooltip" data-i18n="tools.t0tooltip">read-only</span></span>
+            <code class="tool-card__name">pixzclaw_brief</code>
+          </div>
+          <p class="tool-card__tier" data-i18n="tools.t3.tier">o caixa</p>
+          <p data-i18n="tools.t3.desc">O caixa do comerciante num card: saldo em USDC e SOL, e o fechamento das últimas 24h com as faturas pagas e seus ids. Ainda traz um sparkline de 7 dias e as últimas movimentações on-chain.</p>
+          <pre><code data-i18n="tools.t3.output">╭─ PixZClaw · Caixa ─────────────────╮
+│ Wallet     8xkR3pQ9mNvT2wLzAb7cD… │
+│ USDC       142.5                  │
+│ SOL (gas)  0.41 SOL               │
+╰───────────────────────────────────╯
+
+Hoje (últimas 24h)
+• txs ok:      2
+• faturas PIX: 2
+• pagas: demo-1, inv-412
+
+7 dias
+• 7d ▁▃▅▂▇▁▂  (velho→novo)
+
+T0 read-only · sem chave · PixZClaw</code></pre>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="rail-divider" aria-hidden="true"></div>
+
+  <!-- SEGURANÇA -->
+  <section class="section" id="seguranca">
+    <div class="wrap">
+      <h2 class="reveal" data-i18n="security.title">Por que dá pra confiar</h2>
+      <ul class="security-list">
+        <li class="reveal">
+          <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <div><strong data-i18n="security.item1.title">Sem chaves privadas</strong><p data-i18n="security.item1.body">O plugin nunca guarda nem assina com private key. Só ferramentas T0/T1 — ele monta a cobrança, quem paga é o cliente na carteira dele.</p></div>
+        </li>
+        <li class="reveal">
+          <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>
+          <div><strong data-i18n="security.item2.title">Valor conferido on-chain</strong><p data-i18n="security.item2.body">Nunca diz PAID sem checar quanto o lojista recebeu de verdade. Se o cliente pagar menos, marca UNDERPAID ⚠️ e mostra exatamente quanto falta.</p></div>
+        </li>
+        <li class="reveal">
+          <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <div><strong data-i18n="security.item3.title">Teto de valor + destino travado</strong><p data-i18n="security.item3.body">Cada fatura respeita um teto (max_amount_brl) e um destino travado (recipient_locked) — o agente não redireciona o dinheiro nem estoura o limite.</p></div>
+        </li>
+        <li class="reveal">
+          <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          <div><strong data-i18n="security.item4.title">Prompt injection falha fechado</strong><p data-i18n="security.item4.body">Instrução maliciosa não fura o teto: um pedido de "999999999,99" bate no limite e é recusado, em vez de gerar a fatura.</p></div>
+        </li>
+        <li class="reveal">
+          <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V5l-8-3Z"/><path d="M12 8v5"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>
+          <div><strong data-i18n="security.item5.title">Honestidade no PIX</strong><p data-i18n="security.item5.body">O PIX bancário não aparece on-chain, então o PixZClaw nunca inventa "pago". Só marca o PIX como pago quando o operador confirma.</p></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="rail-divider" aria-hidden="true"></div>
+
+  <!-- INSTALAÇÃO -->
+  <section class="section" id="instalacao">
+    <div class="wrap">
+      <h2 class="reveal" data-i18n="install.title">Instalação</h2>
+      <p class="section-intro reveal" data-i18n="install.intro">Roda em qualquer host ZeroClaw — inclusive num Raspberry Pi 3 — em três passos: instalar, configurar e reiniciar.</p>
+
+      <div class="install-step reveal">
+        <div class="install-step__head">
+          <span class="install-step__num">1</span>
+          <p data-i18n="install.step1.label">Instale os 3 plugins da release v0.4.0 com um comando:</p>
+        </div>
+        <div class="code-block">
+          <button type="button" class="copy-btn" data-copy-target="code-install-1" aria-label="Copiar comando" data-i18n-aria="a11y.copy1">
+            <span data-i18n="install.copy">copiar</span>
+          </button>
+          <pre id="code-install-1"><code>curl -fsSL https://raw.githubusercontent.com/capitv/pixzclaw-pi/main/scripts/force-reinstall-plugins.sh | bash -s -- v0.4.0-plugins</code></pre>
+        </div>
+      </div>
+
+      <div class="install-step reveal">
+        <div class="install-step__head">
+          <span class="install-step__num">2</span>
+          <p data-i18n="install.step2.label">Ajuste a chave PIX, o destino Solana e os limites. Use seus próprios valores:</p>
+        </div>
+        <div class="code-block">
+          <button type="button" class="copy-btn" data-copy-target="code-install-2" aria-label="Copiar comandos" data-i18n-aria="a11y.copy2">
+            <span data-i18n="install.copy">copiar</span>
+          </button>
+          <pre id="code-install-2"><code>zeroclaw config set plugins.entries.brl-usdc-invoice.config.pix_key "SUA_CHAVE_PIX"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.pix_name "SEU_NOME"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.pix_city "SUA_CIDADE"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.merchant_solana "PUBKEY_PUBLICA"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.max_amount_brl "1000"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.brl_per_usdc "5.5"
+zeroclaw config set plugins.entries.brl-usdc-invoice.config.recipient_locked "true"
+
+zeroclaw config set plugins.entries.invoice-status.config.merchant_solana "PUBKEY_PUBLICA"
+zeroclaw config set plugins.entries.invoice-status.config.rpc_url "https://api.mainnet-beta.solana.com"
+
+zeroclaw config set plugins.entries.pixzclaw-brief.config.merchant_solana "PUBKEY_PUBLICA"
+zeroclaw config set plugins.entries.pixzclaw-brief.config.rpc_url "https://api.mainnet-beta.solana.com"</code></pre>
+        </div>
+        <div class="callout callout--amber">
+          <span aria-hidden="true">⚠️</span>
+          <p data-i18n="install.warning"><code>merchant_solana</code> é a sua chave PÚBLICA (pubkey), nunca a private key. O PixZClaw não pede — e não guarda — chave privada.</p>
+        </div>
+      </div>
+
+      <div class="install-step reveal">
+        <div class="install-step__head">
+          <span class="install-step__num">3</span>
+          <p data-i18n="install.step3.label">Reinicie o serviço para aplicar a config:</p>
+        </div>
+        <div class="code-block">
+          <button type="button" class="copy-btn" data-copy-target="code-install-3" aria-label="Copiar comando" data-i18n-aria="a11y.copy1">
+            <span data-i18n="install.copy">copiar</span>
+          </button>
+          <pre id="code-install-3"><code>zeroclaw service restart</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rail-divider" aria-hidden="true"></div>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <h2 class="reveal" data-i18n="faq.title">Perguntas frequentes</h2>
+
+      <details class="faq-item reveal">
+        <summary data-i18n="faq.q1.q">Preciso de exchange ou conversão de moeda?</summary>
+        <p data-i18n="faq.q1.a">Não. PIX e USDC são dois trilhos de pagamento independentes na mesma fatura — não é on-ramp nem câmbio. O <code>brl_per_usdc</code> é só uma cotação offline pra montar o valor do Solana Pay.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary data-i18n="faq.q2.q">E se o cliente pagar menos que o combinado?</summary>
+        <p data-i18n="faq.q2.a">O <code>invoice_status</code> confere o valor recebido on-chain e responde UNDERPAID ⚠️, mostrando exatamente quanto ainda falta. Ele soma pagamentos parciais e só marca PAID quando o valor bate.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary data-i18n="faq.q3.q">O PIX confirma sozinho?</summary>
+        <p data-i18n="faq.q3.a">Não. O PIX do banco não é visível on-chain, então a ferramenta nunca diz "pago" por conta própria — o operador confirma o recebimento. É honestidade por design.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary data-i18n="faq.q4.q">Onde isso roda?</summary>
+        <p data-i18n="faq.q4.a">Num Raspberry Pi 3 (ou superior) ou em qualquer host que rode o agente ZeroClaw. O hardware sai por uns R$ 200.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary data-i18n="faq.q5.q">É seguro deixar um agente cobrar por mim?</summary>
+        <p data-i18n="faq.q5.a">Sim. São ferramentas T0/T1 (sem private key), com teto de valor, destino travado e proteção contra prompt injection. O agente monta a cobrança; quem paga é sempre o cliente na carteira dele.</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__brand">🦞 PixZClaw</div>
+    <p class="footer__credit" data-i18n="footer.credit">Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + wasm32-wasip2 · 92 testes host · sem solana-sdk.</p>
+    <ul class="footer__links">
+      <li><a href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/capitv/pixzclaw-pi/releases/tag/v0.4.0-plugins" target="_blank" rel="noopener" data-i18n="footer.release">Release v0.4.0</a></li>
+      <li><a href="https://docs.zeroclawlabs.ai/master/en/introduction.html" target="_blank" rel="noopener" data-i18n="footer.docs">Docs ZeroClaw</a></li>
+      <li><a href="https://docs.solanapay.com/spec" target="_blank" rel="noopener" data-i18n="footer.solanapay">Solana Pay spec</a></li>
+    </ul>
+    <p class="footer__license" data-i18n="footer.license">Licenciado sob MIT / Apache-2.0.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
