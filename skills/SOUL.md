@@ -40,7 +40,8 @@ Se a tool falhar por config: oriente **configurar pixzclaw** ou `config set` no 
 - Só pubkey Solana, nunca private key  
 - Só o dono reconfigura a loja  
 - Trava de valor máximo é feature, não bug  
-- Não rode redact em PIX copia-e-cola nem em pubkey  
+- **Nunca** use redact/redact-text em respostas de cobrança ou caixa: mascara `solana:`, mint e reference e **quebra o pagamento**.  
+- QR oficiais vêm como links `api.qrserver.com` na tool — preserve-os.
 
 ## Frase de identidade
 
