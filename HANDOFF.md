@@ -1,6 +1,6 @@
 # PixZClaw / ZeroClaw Solana Bounty — Handoff completo
 
-**Última atualização:** 2026-07-21  
+**Última atualização:** 2026-07-21 (v0.4.0 publicada)  
 **Objetivo do handoff:** outro agente (ou humano) continuar o trabalho sem redescobrir contexto.
 
 ---
@@ -53,7 +53,8 @@ Marca comercial do pacote de plugins:
 | ONBOARDING.md | https://github.com/capitv/pixzclaw-pi/blob/main/ONBOARDING.md |
 | PI_INSTALL.md | https://github.com/capitv/pixzclaw-pi/blob/main/PI_INSTALL.md |
 | CI workflow (fonte) | https://github.com/capitv/pixzclaw-pi/blob/main/ci/build-pi.yml |
-| Release **v0.3.0** (fatura + QR) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.3.0-plugins |
+| Release **v0.4.0** (valor verificado + recibo + caixa) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.4.0-plugins |
+| Release v0.3.0 (fatura + QR) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.3.0-plugins |
 | Release v0.2.1 (brief + skills) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.2.1-plugins |
 | Artifact Actions (binário aarch64) | via Actions run do repo (login); não é URL pública estável |
 
@@ -134,6 +135,23 @@ Memo: `PIX|BRL|<invoice_id>|<short>`
 7. Skills onboarding + daily + SOUL (🦞 PixZClaw)  
 8. UX fatura v0.3.0 (QR links) release criada  
 9. Docs locais: PLANNING, WORKFLOW, QUICK_WINS, DEMO_SCRIPT, ONBOARDING  
+10. **v0.4.0** (2026-07-21, release `v0.4.0-plugins`, plugins @ 0.2.0):
+    - invoice-status: **valor verificado on-chain** via `getTransaction`
+      (delta pre/postTokenBalances) → PAID ✅ / UNDERPAID ⚠️ / OVERPAID;
+      soma pagamentos parciais (até 5 sigs); spam não mascara pagamento;
+      nunca PAID sem valor conferido (degrada p/ `SIG OK`).
+      Recibo PT-BR compartilhável quando pago.
+    - pixzclaw-brief: fechamento de caixa 24h (txs, faturas PIX, ids),
+      legenda sparkline, horários relativos.
+    - brl-usdc-invoice: card novo — PIX em code block (tap-to-copy),
+      bloco "Encaminhe ao cliente", cotação no rodapé; USDC **QR-only**.
+    - 92 testes host. Feito por times Opus A/B + validação Fable.
+
+**⚠️ Lição v0.3.1/0.3.2 (não regredir):** o host ZeroClaw redacta base58 de
+alta entropia no chat SEMPRE (não é o plugin redact-text; instrução não
+desliga). Política: linha `solana:` crua NUNCA aparece; trilho USDC é
+QR-only (o QR codifica a URL completa e sobrevive). PIX copia-e-cola
+sobrevive (não é base58).
 
 ### Em andamento / frágil ⚠️
 1. **Config real no Pi** (`pix_key`, `merchant_solana`) — usuário em processo de configurar  
