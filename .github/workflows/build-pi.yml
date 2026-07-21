@@ -1,0 +1,104 @@
+# Build ZeroClaw (aarch64, plugins host) + PixZClaw WASM plugins for Raspberry Pi.
+# You never compile on the Pi. Download the artifact and install on the Pi only.
+name: build-pi
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ----- WASM plugins (any arch runner) -----
+  plugins-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - name: Test + build brl-usdc-invoice
+        working-directory: plugins/brl-usdc-invoice
+        run: |
+          cargo test --locked
+          cargo build --locked --target wasm32-wasip2 --release
+          cp target/wasm32-wasip2/release/brl_usdc_invoice.wasm .
+
+      - name: Test + build invoice-status
+        working-directory: plugins/invoice-status
+        run: |
+          cargo test --locked
+          cargo build --locked --target wasm32-wasip2 --release
+          cp target/wasm32-wasip2/release/invoice_status.wasm .
+
+      - name: Stage plugin install dirs
+        run: |
+          mkdir -p dist/plugins/brl-usdc-invoice dist/plugins/invoice-status
+          cp plugins/brl-usdc-invoice/manifest.toml \
+             plugins/brl-usdc-invoice/brl_usdc_invoice.wasm \
+             plugins/brl-usdc-invoice/config.example.toml \
+             plugins/brl-usdc-invoice/README.md \
+             dist/plugins/brl-usdc-invoice/
+          cp plugins/invoice-status/manifest.toml \
+             plugins/invoice-status/invoice_status.wasm \
+             plugins/invoice-status/config.example.toml \
+             plugins/invoice-status/README.md \
+             dist/plugins/invoice-status/
+          cp PI_INSTALL.md dist/ 2>/dev/null || true
+          tar -C dist -czf pixzclaw-plugins.tar.gz plugins PI_INSTALL.md 2>/dev/null || tar -C dist -czf pixzclaw-plugins.tar.gz plugins
+          ls -lah dist pixzclaw-plugins.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pixzclaw-plugins
+          path: pixzclaw-plugins.tar.gz
+
+  # ----- ZeroClaw binary for Pi (aarch64) -----
+  zeroclaw-aarch64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: zeroclaw-labs/zeroclaw
+          path: zeroclaw
+          # pin is optional; floating master is ok for bounty testing
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Install aarch64 cross linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build ZeroClaw with plugin host (cross aarch64)
+        working-directory: zeroclaw
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          # keep memory reasonable on shared runners
+          CARGO_BUILD_JOBS: "2"
+        run: |
+          cargo build --release \
+            --target aarch64-unknown-linux-gnu \
+            --features plugins-wasm,plugins-wasm-cranelift
+          ls -lh target/aarch64-unknown-linux-gnu/release/zeroclaw
+          file target/aarch64-unknown-linux-gnu/release/zeroclaw || true
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp zeroclaw/target/aarch64-unknown-linux-gnu/release/zeroclaw dist/zeroclaw-aarch64
+          chmod +x dist/zeroclaw-aarch64
+          tar -C dist -czf zeroclaw-aarch64-plugins.tar.gz zeroclaw-aarch64
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zeroclaw-aarch64-plugins
+          path: zeroclaw-aarch64-plugins.tar.gz
