@@ -236,22 +236,22 @@ pub fn fetch_and_status<T: HttpTransport>(
             .filter(|s| s.is_success())
             .take(MAX_VALUE_CHECKS)
         {
-            match client.get_transaction(&sig.signature, cfg.usdc_mint.trim(), merchant) {
-                Ok(Some(r)) => {
-                    any_verified = true;
-                    // Only positive deltas count as received; an unrelated
-                    // outgoing transfer in a tx touching the reference must
-                    // not subtract from the settlement sum.
-                    if r.ui_amount > 0.0 {
-                        received_sum += r.ui_amount;
-                    }
-                    if block_time.is_none() {
-                        block_time = r.block_time.or(sig.block_time);
-                    }
+            // A tx the RPC cannot return (no result / no meta / transport
+            // error) is simply unverifiable: skip it and let the txs that did
+            // verify stand as an honest lower bound of what arrived.
+            if let Ok(Some(r)) =
+                client.get_transaction(&sig.signature, cfg.usdc_mint.trim(), merchant)
+            {
+                any_verified = true;
+                // Only positive deltas count as received; an unrelated
+                // outgoing transfer in a tx touching the reference must not
+                // subtract from the settlement sum.
+                if r.ui_amount > 0.0 {
+                    received_sum += r.ui_amount;
                 }
-                // tx not found / no meta / RPC error → this tx unverifiable;
-                // older verified txs still yield an honest lower bound.
-                Ok(None) | Err(_) => {}
+                if block_time.is_none() {
+                    block_time = r.block_time.or(sig.block_time);
+                }
             }
         }
     }

@@ -239,10 +239,7 @@ fn rescale(amount: &ParsedAmount, new_scale: u32) -> u128 {
     }
     if new_scale > amount.scale {
         let diff = new_scale - amount.scale;
-        amount
-            .value
-            .checked_mul(ten_pow(diff).unwrap_or(1))
-            .unwrap_or(u128::MAX)
+        amount.value.saturating_mul(ten_pow(diff).unwrap_or(1))
     } else {
         let diff = amount.scale - new_scale;
         amount.value / ten_pow(diff).unwrap_or(1)

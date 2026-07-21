@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn today_window_counts_24h_only() {
         let now = 1_700_000_000i64;
-        let sigs = vec![
+        let sigs = [
             sig("A", Some("PIX|BRL|hoje-1|x"), now - 3_600), // 1h atrás → dentro
             sig("B", Some("PIX|BRL|hoje-2|x"), now - 80_000), // ~22h → dentro
             sig("C", Some("PIX|BRL|velha|x"), now - 90_000),  // 25h → fora
@@ -353,7 +353,7 @@ mod tests {
     #[test]
     fn today_ids_dedup_and_capped() {
         let now = 1_700_000_000i64;
-        let sigs = vec![
+        let sigs = [
             sig("A", Some("PIX|BRL|dup|x"), now - 10),
             sig("B", Some("PIX|BRL|dup|y"), now - 20),
             sig("C", Some("PIX|BRL|two|z"), now - 30),

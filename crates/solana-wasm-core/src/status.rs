@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn verified_tolerance_counts_as_paid() {
         // 99.6% of expected → within tolerance → PAID (no underpaid).
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, recv(99.6), Some("100"), false,
         );
@@ -373,7 +373,7 @@ mod tests {
 
     #[test]
     fn verified_underpaid_no_receipt() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, recv(0.01), Some("90"), false,
         );
@@ -385,7 +385,7 @@ mod tests {
 
     #[test]
     fn verified_overpaid_counts_as_paid() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, recv(120.0), Some("100"), false,
         );
@@ -396,7 +396,7 @@ mod tests {
 
     #[test]
     fn verified_no_expected_reports_received() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, recv(42.5), None, false,
         );
@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn verified_degrades_when_tx_unavailable() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, None, Some("90"), false,
         );
@@ -419,7 +419,7 @@ mod tests {
 
     #[test]
     fn verified_zero_received_is_pending() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures_verified(
             "inv-1", "Ref", &sigs, recv(0.0), Some("90"), false,
         );
@@ -464,7 +464,7 @@ mod tests {
     /// Not settled (or value unconfirmed) → the watcher must keep running.
     #[test]
     fn no_settled_cron_hint_when_not_confirmed() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let cases = [
             // (label, sigs, verified, expected)
             ("PENDING empty", &[][..], None, Some("90")),
@@ -485,7 +485,7 @@ mod tests {
     /// PIX marked + USDC confirmed still ends with the teardown line.
     #[test]
     fn settled_cron_hint_with_pix_marked() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s =
             status_from_signatures_verified("inv-9", "Ref", &sigs, recv(10.0), Some("10"), true);
         assert_eq!(s.lines().last().unwrap(), SETTLED_CRON_HINT, "{s}");
@@ -494,7 +494,7 @@ mod tests {
     /// The non-verified legacy shaper never emits the teardown line.
     #[test]
     fn legacy_shaper_has_no_cron_hint() {
-        let sigs = vec![sig("Sig", true, None)];
+        let sigs = [sig("Sig", true, None)];
         let s = status_from_signatures("inv-1", "Ref", &sigs, Some("10"), false);
         assert!(!s.contains("cron_remove"), "{s}");
     }
