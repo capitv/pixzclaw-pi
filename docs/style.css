@@ -1,7 +1,22 @@
 /* ==========================================================================
    PixZClaw — dual-rail landing page
    Aesthetic: technical documentation editorial / engineering zine.
-   Two payment rails (PIX teal, Solana gradient) as a page-wide system.
+
+   COLOUR SYSTEM — every colour denotes one actor, and only that actor.
+   The page documents this legend to the reader (see .clegend, section 01).
+
+     coral  #FF5A3C  --accent  PixZClaw itself: the mark, the CTAs, our claims
+     cyan   #22d3ee  --zc      ZeroClaw, the host runtime: agent, cron, wasm
+     teal   #32BCAD  --pix     the PIX rail (official PIX brand colour)
+     grad   #9945FF → #14F195  --sol-a/--sol-b  the Solana rail
+     amber  #F5A623  --amber   a warning STATE, never an actor
+
+   Cyan is used sparingly and on purpose: it fights coral if spread around.
+
+   RECURRING DETAIL — the "double rail": two stacked hairlines, the upper one
+   PIX teal, the lower one the Solana gradient, both fading out to the right.
+   It is the mark's two pincers flattened into a rule, and it marks every
+   section head and every section kicker. See .railpair.
    ========================================================================== */
 
 :root {
@@ -15,6 +30,9 @@
 
   --accent: #FF5A3C;
   --accent-soft: rgba(255, 90, 60, 0.12);
+  --zc: #22d3ee;
+  --zc-light: #67e8f9;
+  --zc-soft: rgba(34, 211, 238, 0.1);
   --pix: #32BCAD;
   --pix-soft: rgba(50, 188, 173, 0.12);
   --sol-a: #9945FF;
@@ -79,7 +97,11 @@ h1, h2, h3 {
   color: var(--text);
   text-wrap: balance;
 }
-h2 { font-size: clamp(1.85rem, 1.1rem + 2.9vw, 3.15rem); }
+h2 {
+  font-size: clamp(1.85rem, 1.1rem + 2.9vw, 3.15rem);
+  letter-spacing: -0.042em;   /* display voice: hard negative tracking */
+  word-spacing: 0.02em;
+}
 h3 { font-size: 1.02rem; letter-spacing: -0.012em; }
 
 p { margin: 0 0 1em; color: var(--text-dim); }
@@ -87,13 +109,42 @@ p { margin: 0 0 1em; color: var(--text-dim); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-em { font-style: normal; color: var(--pix); }
+/* emphasis is neutral by default; it only takes a colour when it names an actor */
+em { font-style: normal; color: var(--text); font-weight: 600; }
+.em-sol { color: var(--sol-b); font-weight: 500; }
+.em-pix { color: var(--pix); font-weight: 500; }
 
 code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   color: var(--code-text);
 }
+
+/* Actor tokens (.zc / .sol / .pix) live at the very bottom of this file so they
+   win over the local `code { color: inherit }` rules inside individual blocks. */
+
+/* ==========================================================================
+   The double rail — the page's recurring typographic detail.
+   Two hairlines: PIX teal above, the Solana gradient below, both running out
+   to the right. Applied at .kicker__rule (small), .sec-head::before and
+   .rem::before (full width) and .footer__fx::before (page close).
+   ========================================================================== */
+
+/* ==========================================================================
+   The mark — two pincers (one per rail) closing on one invoice.
+   Drawn as two circular arcs with a hook, plus a filled rhombus at the pinch.
+   Mono for favicon/UI chrome, bicolour where the thesis is being made.
+   ========================================================================== */
+
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.mark { display: block; width: 100%; height: 100%; }
+.mark .mk-arc { fill: none; stroke-width: 3.8; stroke-linecap: round; }
+.mark--mono .mk-arc { stroke: currentColor; }
+.mark--mono .mk-node { fill: currentColor; }
+.mark--duo .mk-pix { stroke: var(--pix); }
+.mark--duo .mk-sol { stroke: url(#pzSol); }
+.mark--duo .mk-node { fill: var(--accent); }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -156,7 +207,15 @@ code {
   flex-shrink: 0;
 }
 .brand:hover { text-decoration: none; color: var(--text); }
-.brand__claw { font-size: 1.05rem; }
+.brand__mark {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  color: var(--accent);
+  align-self: center;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.brand:hover .brand__mark { transform: rotate(-8deg) scale(1.06); }
 .brand__ver {
   font-family: var(--font-mono);
   font-weight: 400;
@@ -233,7 +292,7 @@ code {
 .btn--primary { background: var(--accent); color: #0B0E14; }
 .btn--primary:hover { background: #ff7057; transform: translateY(-1px); }
 .btn--ghost { border-color: var(--border); color: var(--text); background: rgba(255,255,255,0.015); }
-.btn--ghost:hover { border-color: var(--pix); color: var(--pix); }
+.btn--ghost:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
 
 /* ============================== Hero ============================== */
 
@@ -250,6 +309,9 @@ code {
   pointer-events: none;
   opacity: 0.5;
 }
+/* the rails are atmosphere, not content — pull them back where the column is narrow
+   and the copy would otherwise be crossed by a line */
+@media (max-width: 979px) { .hero__rails { opacity: 0.26; } }
 .hero__rails svg { width: 100%; height: 100%; }
 .hrail { fill: none; stroke-width: 1.6; stroke-linecap: round; }
 .hrail--pix {
@@ -356,7 +418,8 @@ code {
   color: var(--text);
   overflow-wrap: anywhere;
 }
-.spec__zero { color: var(--pix); font-weight: 700; }
+.spec__zero { color: var(--accent); font-weight: 700; }  /* our claim → our colour */
+.spec dd.zc { color: var(--zc); }                        /* the host runtime */
 
 /* ---- Telegram mock ---- */
 
@@ -382,17 +445,18 @@ code {
   border-bottom: 1px solid var(--border);
 }
 .chat__avatar {
-  font-size: 1.15rem;
   background: #1A2432;
   border: 1px solid var(--border);
   border-radius: 50%;
   width: 34px; height: 34px;
+  padding: 6px;
+  color: var(--accent);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .chat__id { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .chat__name { font-family: var(--font-display); font-weight: 600; font-size: 0.88rem; }
-.chat__status { font-family: var(--font-mono); font-size: 0.66rem; color: var(--pix); }
+.chat__status { font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-faint); }
 .chat__tag {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -447,7 +511,8 @@ code {
 }
 .msg--card { padding: 0.7em 0.75em 1.2em; }
 
-.inv__top { display: flex; align-items: baseline; gap: 0.35rem; margin-bottom: 0.3em; }
+.inv__top { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3em; }
+.inv__mark { width: 15px; height: 15px; flex-shrink: 0; color: var(--accent); }
 .inv__title { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; letter-spacing: -0.015em; }
 .inv__amount {
   font-family: var(--font-mono);
@@ -547,7 +612,7 @@ code {
   margin: 0 0 0.2em !important;
   overflow-wrap: anywhere;
 }
-.paid__line--link { color: var(--pix); }
+.paid__line--link { color: var(--sol-b); }
 .paid__line--dim { color: var(--text-faint); }
 
 /* ============================== Proof band ============================== */
@@ -596,8 +661,9 @@ code {
   color: var(--text);
   margin-bottom: 0.25rem;
 }
-.proof__num a { color: var(--accent); }
-.proof__num--zero { color: var(--pix); }
+.proof__num--zc a { color: var(--zc); }        /* the PR lives in ZeroClaw's repo */
+.proof__num--zc a:hover { color: var(--zc-light); }
+.proof__num--zero { color: var(--accent); }    /* our claim about our own code */
 .proof__label {
   display: block;
   font-family: var(--font-display);
@@ -641,20 +707,47 @@ code {
   margin: 0 0 1.6rem;
 }
 .kicker__num { color: var(--accent); font-weight: 700; }
+/* the double rail, miniaturised: the section marker reuses the mark's geometry */
 .kicker__rule {
-  width: 2rem;
-  height: 1px;
-  background: linear-gradient(90deg, var(--pix), var(--sol-a));
+  width: 2.4rem;
   flex-shrink: 0;
+  align-self: center;
+  background-image: linear-gradient(90deg, var(--pix), rgba(50, 188, 173, 0));
+  background-size: 100% 1px;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  height: 5px;
+}
+.kicker__rule::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 3px;
+  background-image: linear-gradient(90deg, var(--sol-a), var(--sol-b) 55%, rgba(20, 241, 149, 0));
 }
 
 .sec-head {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem 3rem;
   margin-bottom: 2.6rem;
-  border-top: 1px solid var(--rule-soft);
-  padding-top: 1.6rem;
+  padding-top: 1.9rem;
+}
+/* full-width double rail above every section head — the page's signature */
+.sec-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background-image:
+    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
+    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+  background-size: 100% 1px, 100% 1px;
+  background-position: 0 0, 0 4px;
+  background-repeat: no-repeat;
 }
 @media (min-width: 900px) {
   .sec-head { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); align-items: end; }
@@ -662,7 +755,6 @@ code {
 }
 .sec-head--tight { grid-template-columns: minmax(0, 1fr); }
 .sec-lead { font-size: 1rem; color: var(--text-dim); margin: 0; max-width: 58ch; }
-.sec-lead code { color: var(--pix); }
 
 /* ============================== 01 — diagram ============================== */
 
@@ -737,10 +829,58 @@ code {
 .lg::before {
   content: "";
   width: 26px; height: 0;
-  border-top: 2px solid var(--pix);
+  border-top: 2px solid var(--sol-b);  /* solid = machine-verified = the Solana rail */
   flex-shrink: 0;
 }
-.lg--dash::before { border-top-style: dashed; border-top-color: var(--text-dim); }
+.lg--dash::before { border-top-style: dashed; border-top-color: var(--pix); }
+
+/* ============================== colour legend ============================== */
+
+.clegend {
+  margin: 0 0 3rem;
+  padding: 1.1rem 0 0;
+  border-top: 1px solid var(--rule);
+}
+.clegend__h {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 0.85rem;
+}
+.clegend__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem 2rem;
+}
+@media (min-width: 620px) { .clegend__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .clegend__list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.clegend__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.79rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+  min-width: 0;
+}
+.clegend__list b { font-weight: 600; color: var(--text); }
+.sw {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  transform: translateY(1px);
+}
+.sw--brand { background: var(--accent); }
+.sw--zc    { background: var(--zc); }
+.sw--pix   { background: var(--pix); }
+.sw--sol   { background: linear-gradient(135deg, var(--sol-a), var(--sol-b)); }
 
 /* ---- editorial steps ---- */
 
@@ -821,7 +961,6 @@ code {
   margin-bottom: 0.9em;
 }
 .tool__desc { font-size: 0.94rem; margin-bottom: 1.1em; }
-.tool__desc code { color: var(--pix); }
 
 .tier {
   font-family: var(--font-mono);
@@ -872,7 +1011,7 @@ code {
   position: absolute;
   left: 0;
   font-family: var(--font-mono);
-  color: var(--pix);
+  color: var(--accent);
 }
 .facts code { color: var(--text); }
 
@@ -922,13 +1061,49 @@ pre {
 }
 pre code { color: var(--code-text); font-family: var(--font-mono); white-space: pre; }
 
-/* ============================== 03 — reminder ============================== */
+/* ============================== 03 — reminder ==============================
+   This section is about ZeroClaw's native cron, so the host colour leads here. */
 
-.rem { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.2rem; }
+.rem {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.2rem;
+  padding-top: 1.9rem;
+}
+.rem::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background-image:
+    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
+    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+  background-size: 100% 1px, 100% 1px;
+  background-position: 0 0, 0 4px;
+  background-repeat: no-repeat;
+}
 @media (min-width: 900px) {
   .rem { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
 }
 .rem__copy h2 { margin-bottom: 0.6em; }
+
+/* "new in vX" chip — the host runtime ships it, so it wears the host colour */
+.vbadge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--zc);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  background: var(--zc-soft);
+  border-radius: 999px;
+  padding: 0.3em 0.75em;
+  margin: 0 0 1rem;
+}
 .rem__offer {
   font-family: var(--font-mono);
   font-size: 0.9rem;
@@ -942,12 +1117,13 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 }
 .rem__silence {
   font-size: 0.95rem;
-  border-left: 2px solid var(--pix);
+  border-left: 2px solid var(--accent);
   padding-left: 1rem;
   margin: 0;
 }
-.rem__silence strong { color: var(--pix); }
+.rem__silence strong { color: var(--accent); }
 
+/* the timeline IS the cron job: cyan until the on-chain check lands (green) */
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .timeline::before {
   content: "";
@@ -956,8 +1132,8 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   top: 0.5rem;
   bottom: 1.4rem;
   width: 1px;
-  background: linear-gradient(180deg, var(--pix), var(--sol-a) 65%, var(--sol-b));
-  opacity: 0.55;
+  background: linear-gradient(180deg, var(--zc) 0, var(--zc) 55%, var(--sol-b) 100%);
+  opacity: 0.6;
 }
 .timeline li {
   position: relative;
@@ -972,7 +1148,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   width: 11px; height: 11px;
   border-radius: 50%;
   background: var(--bg);
-  border: 2px solid var(--pix);
+  border: 2px solid var(--zc);
 }
 .timeline li.is-hit::before { border-color: var(--sol-b); background: var(--sol-b); box-shadow: 0 0 0 4px rgba(20,241,149,0.12); }
 .timeline__k {
@@ -986,7 +1162,6 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 }
 .timeline li.is-hit .timeline__k { color: var(--sol-b); }
 .timeline p { margin: 0; font-size: 0.93rem; }
-.timeline code { color: var(--pix); }
 
 /* ============================== 04 — what it doesn't do ============================== */
 
@@ -1019,7 +1194,6 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 }
 .not h3 { font-size: 1.22rem; margin-bottom: 0.45em; }
 .not p { margin: 0; font-size: 0.93rem; max-width: 46ch; }
-.not code { color: var(--pix); }
 
 .nots__close {
   margin: 2rem 0 0;
@@ -1061,8 +1235,45 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 }
 .trust h3 { font-size: 1.15rem; margin-bottom: 0.25em; }
 .trust p { font-size: 0.94rem; margin: 0; }
-.trust code { color: var(--pix); }
 .trust li:hover .trust__i { color: var(--accent); }
+
+/* ============================== thesis / breathing band ==============================
+   The one place the mark appears large. Asymmetric on purpose — never centred. */
+
+.thesis {
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  background:
+    radial-gradient(70% 120% at 14% 50%, rgba(255, 90, 60, 0.055), transparent 62%),
+    var(--bg-2);
+}
+.thesis__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.8rem;
+  align-items: center;
+}
+@media (min-width: 820px) {
+  .thesis__grid { grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 5rem); }
+}
+.thesis__mark {
+  width: clamp(116px, 24vw, 208px);
+  height: clamp(116px, 24vw, 208px);
+}
+.thesis__copy h2 {
+  font-size: clamp(1.75rem, 1rem + 3vw, 3rem);
+  letter-spacing: -0.045em;
+  margin-bottom: 0.5em;
+}
+.thesis__copy p { font-size: 1rem; max-width: 52ch; margin: 0 0 1rem; }
+.thesis__foot {
+  font-family: var(--font-mono);
+  font-size: 0.7rem !important;
+  line-height: 1.6;
+  color: var(--text-faint);
+  margin: 0 !important;
+  max-width: 56ch;
+}
 
 /* ============================== 06 — where it runs ============================== */
 
@@ -1121,7 +1332,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   color: var(--text-faint);
   letter-spacing: 0.06em;
 }
-.where__cost--free { color: var(--sol-b); }
+.where__cost--free { color: var(--text); font-weight: 700; }
 .where td:last-child { color: var(--text-dim); font-size: 0.9rem; }
 
 .fineprint {
@@ -1188,7 +1399,10 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
-.copy-btn.is-copied { border-color: var(--pix); color: var(--pix); }
+.copy-btn.is-copied { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* the release tag inside the install command is injected from one constant in script.js */
+[data-version-tag] { color: var(--zc); }
 
 .callout {
   display: flex;
@@ -1238,7 +1452,6 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 .faq__item[open] summary::after { transform: rotate(-135deg); }
 .faq__a { padding: 0 0 1.3rem; max-width: 70ch; }
 .faq__a p { margin: 0; font-size: 0.95rem; }
-.faq__a code { color: var(--pix); }
 
 /* ============================== Footer ============================== */
 
@@ -1248,6 +1461,9 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   .footer__grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 3rem; }
 }
 .footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;
@@ -1255,9 +1471,23 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   margin: 0 0 0.7rem;
   letter-spacing: -0.02em;
 }
+.footer__mark { width: 22px; height: 22px; flex-shrink: 0; color: var(--accent); }
+.footer__ver {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
 .footer__credit { font-size: 0.88rem; max-width: 52ch; margin-bottom: 0.6rem; }
-.footer__credit code { color: var(--pix); }
-.footer__license { font-size: 0.8rem; color: var(--text-faint); margin: 0; }
+.footer__license { font-size: 0.8rem; color: var(--text-faint); margin: 0 0 0.6rem; }
+.footer__tm {
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+  margin: 0;
+  max-width: 52ch;
+}
 .footer__nav ul {
   list-style: none;
   padding: 0;
@@ -1276,13 +1506,28 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   font-size: 0.79rem;
 }
 .footer__nav a:hover { color: var(--accent); text-decoration: none; }
+/* the page closes on the same double rail it opens every section with */
 .footer__fx {
-  margin: 2rem 0 0;
-  padding-top: 1.2rem;
-  border-top: 1px solid var(--rule);
+  position: relative;
+  margin: 2.4rem 0 0;
+  padding-top: 1.4rem;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--text-faint);
+}
+.footer__fx::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background-image:
+    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
+    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+  background-size: 100% 1px, 100% 1px;
+  background-position: 0 0, 0 4px;
+  background-repeat: no-repeat;
 }
 
 /* ============================== Motion ============================== */
@@ -1303,7 +1548,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   :root { --gutter: 1.05rem; }
   .eyebrow { font-size: 0.65rem; letter-spacing: 0.06em; padding: 0.32em 0.7em; }
   .hero__ctas .btn { width: 100%; }
-  .sec-head { padding-top: 1.2rem; }
+  .sec-head, .rem { padding-top: 1.5rem; }
   .tool { padding: 1.2rem 1rem; }
   .rem__offer { font-size: 0.8rem; }
   .msg { max-width: 100%; }
@@ -1311,4 +1556,18 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   .proof__num { font-size: 2.1rem; }
   .not__x { margin-bottom: 0.6rem; }
   pre { font-size: 0.68rem; }
+  .topnav { display: none; }
+  .brand__name { font-size: 0.95rem; }
+  .clegend__list li { font-size: 0.76rem; }
+  .thesis__mark { width: 108px; height: 108px; }
 }
+
+/* ==========================================================================
+   Actor tokens — LAST in the cascade on purpose.
+   A word only takes a colour when it names an actor of the system; several
+   blocks above neutralise <code> with `color: inherit`, and these must win.
+   ========================================================================== */
+
+.zc, code.zc   { color: var(--zc); font-style: normal; }   /* ZeroClaw, the host */
+.sol, code.sol { color: var(--sol-b); font-style: normal; } /* the Solana rail   */
+.pix, code.pix { color: var(--pix); font-style: normal; }   /* the PIX rail      */

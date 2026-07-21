@@ -15,7 +15,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="PixZClaw — uma fatura, dois trilhos: PIX ou USDC">
 <meta name="twitter:description" content="Cobre em BRL no Telegram; o cliente paga por PIX ou por USDC via Solana Pay. Valor conferido on-chain, sem private key.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%9E%3C/text%3E%3C/svg%3E">
+
+<!-- favicon: the PixZClaw mark, monochrome — two rails closing on one invoice -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'3%203%2042%2042'%3E%3Crect%20x%3D'3'%20y%3D'3'%20width%3D'42'%20height%3D'42'%20rx%3D'9'%20fill%3D'%230B0E14'%2F%3E%3Cg%20fill%3D'none'%20stroke%3D'%23FF5A3C'%20stroke-width%3D'4.2'%20stroke-linecap%3D'round'%3E%3Cpath%20d%3D'M7.3%2021A17%2017%200%200%201%2039.4%2016.8A5.5%205.5%200%200%201%2030.5%2019'%2F%3E%3Cpath%20d%3D'M7.3%2027A17%2017%200%200%200%2039.4%2031.2A5.5%205.5%200%200%200%2030.5%2029'%2F%3E%3C%2Fg%3E%3Cpath%20d%3D'M24%2019.4%2028.6%2024%2024%2028.6%2019.4%2024Z'%20fill%3D'%23FF5A3C'%20stroke%3D'%230B0E14'%20stroke-width%3D'2.8'%20paint-order%3D'stroke'%2F%3E%3C%2Fsvg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,14 +26,30 @@
 </head>
 <body>
 
+<!-- shared paint server for the bicolour mark (one definition, many instances) -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="pzSol" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#14F195"/>
+    </linearGradient>
+  </defs>
+</svg>
+
 <a class="skip-link" href="#main" data-i18n="a11y.skip">Pular para o conteúdo</a>
 
 <header class="topbar">
   <div class="topbar__inner">
     <a class="brand" href="#top">
-      <span class="brand__claw" aria-hidden="true">🦞</span>
+      <span class="brand__mark" aria-hidden="true">
+        <svg class="mark mark--mono" viewBox="0 0 48 48" focusable="false">
+          <path class="mk-arc" d="M7.3 21A17 17 0 0 1 39.4 16.8A5.5 5.5 0 0 1 30.5 19"/>
+          <path class="mk-arc" d="M7.3 27A17 17 0 0 0 39.4 31.2A5.5 5.5 0 0 0 30.5 29"/>
+          <path class="mk-node" d="M24 19.4 28.6 24 24 28.6 19.4 24Z"/>
+        </svg>
+      </span>
       <span class="brand__name">PixZClaw</span>
-      <span class="brand__ver">v0.4.0</span>
+      <span class="brand__ver" data-version>v0.5.0</span>
     </a>
 
     <nav class="topnav" aria-label="Seções da página" data-i18n-aria="a11y.nav">
@@ -76,7 +94,7 @@
         <p class="eyebrow">
           <span class="dot dot--pix" aria-hidden="true"></span>
           <span class="dot dot--sol" aria-hidden="true"></span>
-          <span data-i18n="hero.eyebrow">plugin ZeroClaw · T0/T1 · sem private key</span>
+          <span data-i18n="hero.eyebrow">plugin <b class="zc">ZeroClaw</b> · T0/T1 · sem private key</span>
         </p>
 
         <h1 data-i18n="hero.headline">Cobra em BRL.<br>Recebe em PIX <em>ou</em> USDC.</h1>
@@ -85,11 +103,11 @@
 
         <div class="hero__ctas">
           <a class="btn btn--primary" href="#instalacao" data-i18n="hero.ctaPrimary">Instalar no meu host</a>
-          <a class="btn btn--ghost" href="https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123" target="_blank" rel="noopener" data-i18n="hero.ctaSecondary">Ler o PR #123</a>
+          <a class="btn btn--ghost" href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener" data-i18n="hero.ctaSecondary">Abrir o repositório</a>
         </div>
 
         <dl class="spec">
-          <div><dt data-i18n="hero.spec.runtime">runtime</dt><dd>wasm32-wasip2</dd></div>
+          <div><dt data-i18n="hero.spec.runtime">runtime</dt><dd class="zc">wasm32-wasip2</dd></div>
           <div><dt data-i18n="hero.spec.tools">ferramentas</dt><dd>3 · T0 T1</dd></div>
           <div><dt data-i18n="hero.spec.host">host de produção</dt><dd data-i18n="hero.spec.hostVal">Raspberry Pi 3</dd></div>
           <div><dt data-i18n="hero.spec.keys">chaves privadas</dt><dd class="spec__zero">0</dd></div>
@@ -99,7 +117,13 @@
       <div class="hero__chat">
         <div class="chat">
           <div class="chat__bar">
-            <span class="chat__avatar" aria-hidden="true">🦞</span>
+            <span class="chat__avatar" aria-hidden="true">
+              <svg class="mark mark--mono" viewBox="0 0 48 48" focusable="false">
+                <path class="mk-arc" d="M7.3 21A17 17 0 0 1 39.4 16.8A5.5 5.5 0 0 1 30.5 19"/>
+                <path class="mk-arc" d="M7.3 27A17 17 0 0 0 39.4 31.2A5.5 5.5 0 0 0 30.5 29"/>
+                <path class="mk-node" d="M24 19.4 28.6 24 24 28.6 19.4 24Z"/>
+              </svg>
+            </span>
             <div class="chat__id">
               <span class="chat__name">PixZClaw Bot</span>
               <span class="chat__status" data-i18n="chat.status">online · Telegram</span>
@@ -117,7 +141,13 @@
             <div class="msg msg--in msg--card">
               <div class="inv">
                 <div class="inv__top">
-                  <span class="inv__mark" aria-hidden="true">🦞</span>
+                  <span class="inv__mark" aria-hidden="true">
+                    <svg class="mark mark--mono" viewBox="0 0 48 48" focusable="false">
+                      <path class="mk-arc" d="M7.3 21A17 17 0 0 1 39.4 16.8A5.5 5.5 0 0 1 30.5 19"/>
+                      <path class="mk-arc" d="M7.3 27A17 17 0 0 0 39.4 31.2A5.5 5.5 0 0 0 30.5 29"/>
+                      <path class="mk-node" d="M24 19.4 28.6 24 24 28.6 19.4 24Z"/>
+                    </svg>
+                  </span>
                   <span class="inv__title" data-i18n="chat.invoiceTitle">PixZClaw — Fatura #412</span>
                 </div>
                 <div class="inv__amount">
@@ -178,9 +208,9 @@
           <span class="proof__note" data-i18n="proof.tests.note"><code>cargo test</code> sem rede</span>
         </li>
         <li>
-          <span class="proof__num"><a href="https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123" target="_blank" rel="noopener">#123</a></span>
-          <span class="proof__label" data-i18n="proof.pr.label">PR aberto</span>
-          <span class="proof__note" data-i18n="proof.pr.note">no repositório oficial <code>zeroclaw-plugins</code></span>
+          <span class="proof__num proof__num--zc"><a href="https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123" target="_blank" rel="noopener">#123</a></span>
+          <span class="proof__label" data-i18n="proof.pr.label">PR no repo oficial</span>
+          <span class="proof__note" data-i18n="proof.pr.note">aberto em <code class="zc">zeroclaw-labs/zeroclaw-plugins</code></span>
         </li>
         <li>
           <span class="proof__num">24/7</span>
@@ -189,7 +219,7 @@
         </li>
         <li>
           <span class="proof__num proof__num--zero">0</span>
-          <span class="proof__label" data-i18n="proof.nosdk.label">linhas de <code>solana-sdk</code></span>
+          <span class="proof__label" data-i18n="proof.nosdk.label">linhas de <code class="sol">solana-sdk</code></span>
           <span class="proof__note" data-i18n="proof.nosdk.note">core puro + shim fino</span>
         </li>
       </ul>
@@ -203,7 +233,7 @@
       <p class="kicker"><span class="kicker__num">01</span><span class="kicker__rule" aria-hidden="true"></span><span data-i18n="flow.kicker">O caminho do dinheiro</span></p>
       <div class="sec-head">
         <h2 data-i18n="flow.title">Uma fatura sai.<br>Dois trilhos voltam.</h2>
-        <p class="sec-lead" data-i18n="flow.lead">Não é on-ramp, não é câmbio. São dois trilhos independentes carregando o mesmo <code>invoice_id</code>: o PIX vai pro banco do lojista, o USDC vai pra carteira dele via Solana Pay com uma <em>reference</em> única. Só um dos dois pode ser verificado por software — e a página inteira é honesta sobre qual.</p>
+        <p class="sec-lead" data-i18n="flow.lead">Não é on-ramp, não é câmbio. São dois trilhos independentes carregando o mesmo <code>invoice_id</code>: o PIX vai pro banco do lojista, o USDC vai pra carteira dele via Solana Pay com uma <em class="em-sol">reference</em> única. Só um dos dois pode ser verificado por software — e a página inteira é honesta sobre qual.</p>
       </div>
 
       <figure class="diagram">
@@ -290,6 +320,17 @@
         </figcaption>
       </figure>
 
+      <!-- colour legend: every colour on this page denotes one actor -->
+      <aside class="clegend" aria-labelledby="clegend-h">
+        <h3 class="clegend__h" id="clegend-h" data-i18n="legend.title">Legenda de cores — cada cor é um ator, nunca enfeite</h3>
+        <ul class="clegend__list">
+          <li><span class="sw sw--brand" aria-hidden="true"></span><span data-i18n="legend.brand"><b>PixZClaw</b> — o plugin, a marca, o que você instala</span></li>
+          <li><span class="sw sw--zc" aria-hidden="true"></span><span data-i18n="legend.host"><b>ZeroClaw</b> — o runtime host, o cron, o agente</span></li>
+          <li><span class="sw sw--pix" aria-hidden="true"></span><span data-i18n="legend.pix"><b>trilho PIX</b> — BRL, banco, confirmação humana</span></li>
+          <li><span class="sw sw--sol" aria-hidden="true"></span><span data-i18n="legend.sol"><b>trilho Solana</b> — USDC, on-chain, valor conferido</span></li>
+        </ul>
+      </aside>
+
       <ol class="steps">
         <li>
           <span class="steps__n" aria-hidden="true">1</span>
@@ -316,7 +357,7 @@
       <p class="kicker"><span class="kicker__num">02</span><span class="kicker__rule" aria-hidden="true"></span><span data-i18n="tools.kicker">As três ferramentas</span></p>
       <div class="sec-head">
         <h2 data-i18n="tools.title">Uma escreve. Duas só leem.</h2>
-        <p class="sec-lead" data-i18n="tools.lead">Três plugins WebAssembly compilados para <code>wasm32-wasip2</code>. Só um deles produz algo — e mesmo esse não move dinheiro, só monta a cobrança.</p>
+        <p class="sec-lead" data-i18n="tools.lead">Três plugins WebAssembly compilados para <code class="zc">wasm32-wasip2</code>. Só um deles produz algo — e mesmo esse não move dinheiro, só monta a cobrança.</p>
       </div>
 
       <article class="tool tool--feature">
@@ -329,7 +370,7 @@
           <p class="tool__desc" data-i18n="tools.t1.desc">Emite uma fatura com dois trilhos: PIX Copia e Cola (EMV+CRC16 de verdade) e URL Solana Pay em USDC, com o mesmo <code>invoice_id</code> nos dois. QR codes por link, teto de valor e destino travado — pronto para encaminhar ao cliente.</p>
           <ul class="facts">
             <li data-i18n="tools.t1.f1">payload EMV montado e assinado com CRC16 — não é imagem, é código válido</li>
-            <li data-i18n="tools.t1.f2">a <em>reference</em> do Solana Pay é o próprio <code>invoice_id</code></li>
+            <li data-i18n="tools.t1.f2">a <em class="em-sol">reference</em> do Solana Pay é o próprio <code>invoice_id</code></li>
             <li data-i18n="tools.t1.f3">acima do teto, falha fechado: recusa em vez de emitir</li>
           </ul>
         </div>
@@ -360,7 +401,7 @@ Escaneie com Phantom/Solflare.
             <code class="tool__name">invoice_status</code>
           </div>
           <p class="tool__tag" data-i18n="tools.t2.tag">o juiz on-chain</p>
-          <p class="tool__desc" data-i18n="tools.t2.desc">Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code>pre/postTokenBalances</code>. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo compartilhável com link do Solscan.</p>
+          <p class="tool__desc" data-i18n="tools.t2.desc">Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code class="sol">pre/postTokenBalances</code>. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo compartilhável com link do Solscan.</p>
           <ul class="verdicts">
             <li class="vd vd--paid"><b>PAID ✅</b><span data-i18n="tools.t2.v1">o valor bate</span></li>
             <li class="vd vd--under"><b>UNDERPAID ⚠️</b><span data-i18n="tools.t2.v2">diz exatamente quanto falta</span></li>
@@ -415,8 +456,9 @@ T0 read-only · sem chave · PixZClaw</code></pre>
 
       <div class="rem">
         <div class="rem__copy">
+          <p class="vbadge" data-i18n="rem.badge">novo na v0.5.0 · lembrete automático</p>
           <h2 data-i18n="rem.title">Você não precisa perguntar<br>se o cliente pagou.</h2>
-          <p class="sec-lead" data-i18n="rem.lead">Toda fatura vem com uma oferta. Aceite e o agente cria um job no cron nativo do ZeroClaw — sem serviço externo, sem webhook, sem fila.</p>
+          <p class="sec-lead" data-i18n="rem.lead">Toda fatura vem com uma oferta. Aceite e o agente cria um job no cron nativo do <b class="zc">ZeroClaw</b> — sem serviço externo, sem webhook, sem fila.</p>
           <p class="rem__offer" data-i18n="rem.offer">🔔 avisa quando a 412 pagar</p>
           <p class="rem__silence" data-i18n="rem.silence">E o mais importante: enquanto está PENDING, <strong>silêncio</strong>. O bot nunca te manda “ainda não pagou”. Ele só fala quando tem um valor conferido pra mostrar.</p>
         </div>
@@ -424,7 +466,7 @@ T0 read-only · sem chave · PixZClaw</code></pre>
         <ol class="timeline">
           <li>
             <span class="timeline__k">t+0</span>
-            <p data-i18n="rem.t1">O agente registra um job no cron do ZeroClaw, amarrado ao <code>invoice_id</code>.</p>
+            <p data-i18n="rem.t1">O agente registra um job no cron do <b class="zc">ZeroClaw</b>, amarrado ao <code>invoice_id</code>.</p>
           </li>
           <li>
             <span class="timeline__k" data-i18n="rem.t2k">a cada 5 min</span>
@@ -470,7 +512,7 @@ T0 read-only · sem chave · PixZClaw</code></pre>
         <article class="not">
           <span class="not__x" aria-hidden="true">✕</span>
           <h3 data-i18n="not.i3.title">Não guarda private key.</h3>
-          <p data-i18n="not.i3.body">Nenhuma chave privada é pedida, lida ou salva. A única coisa que o plugin conhece é a <em>pubkey</em> do lojista — que é pública por definição.</p>
+          <p data-i18n="not.i3.body">Nenhuma chave privada é pedida, lida ou salva. A única coisa que o plugin conhece é a <em class="em-sol">pubkey</em> do lojista — que é pública por definição.</p>
         </article>
         <article class="not">
           <span class="not__x" aria-hidden="true">✕</span>
@@ -518,6 +560,24 @@ T0 read-only · sem chave · PixZClaw</code></pre>
           <p data-i18n="trust.i5.body">O PIX bancário não aparece on-chain, então o PixZClaw nunca inventa “pago”. Só marca o PIX como pago quando o operador confirma.</p>
         </li>
       </ul>
+    </div>
+  </section>
+
+  <!-- ============================ TESE / RESPIRO ============================ -->
+  <section class="thesis" aria-labelledby="thesis-h">
+    <div class="wrap thesis__grid">
+      <div class="thesis__mark" aria-hidden="true">
+        <svg class="mark mark--duo" viewBox="0 0 48 48" focusable="false">
+          <path class="mk-arc mk-pix" d="M7.3 21A17 17 0 0 1 39.4 16.8A5.5 5.5 0 0 1 30.5 19"/>
+          <path class="mk-arc mk-sol" d="M7.3 27A17 17 0 0 0 39.4 31.2A5.5 5.5 0 0 0 30.5 29"/>
+          <path class="mk-node" d="M24 19.4 28.6 24 24 28.6 19.4 24Z"/>
+        </svg>
+      </div>
+      <div class="thesis__copy">
+        <h2 id="thesis-h" data-i18n="thesis.title">Duas pinças.<br>Uma fatura no meio.</h2>
+        <p data-i18n="thesis.body">A marca é a tese. A pinça de cima é o trilho PIX; a de baixo é o trilho Solana. Elas se fecham sobre o mesmo losango — o <code>invoice_id</code> que os dois carregam. Nenhuma das duas passa por dentro da outra: são vias independentes, e só uma delas a máquina consegue conferir sozinha.</p>
+        <p class="thesis__foot" data-i18n="thesis.foot">Roda no ZeroClaw, mas o símbolo é nosso. Nome e logo do ZeroClaw são marcas da ZeroClaw Labs.</p>
+      </div>
     </div>
   </section>
 
@@ -571,20 +631,20 @@ T0 read-only · sem chave · PixZClaw</code></pre>
       <p class="kicker"><span class="kicker__num">07</span><span class="kicker__rule" aria-hidden="true"></span><span data-i18n="install.kicker">Instalação</span></p>
       <div class="sec-head">
         <h2 data-i18n="install.title">Três comandos<br>e um restart.</h2>
-        <p class="sec-lead" data-i18n="install.lead">Roda em qualquer host ZeroClaw — inclusive num Raspberry Pi 3. Instalar, configurar, reiniciar.</p>
+        <p class="sec-lead" data-i18n="install.lead">Roda em qualquer host <b class="zc">ZeroClaw</b> — inclusive num Raspberry Pi 3. Instalar, configurar, reiniciar.</p>
       </div>
 
       <div class="inst">
         <div class="inst__row">
           <div class="inst__label">
             <span class="inst__n" aria-hidden="true">1</span>
-            <p data-i18n="install.step1.label">Instale os 3 plugins da release v0.4.0 com um comando:</p>
+            <p data-i18n="install.step1.label">Instale os 3 plugins da release v0.5.0 com um comando:</p>
           </div>
           <div class="code-block">
             <button type="button" class="copy-btn" data-copy-target="code-install-1" aria-label="Copiar comando" data-i18n-aria="a11y.copy1">
               <span data-i18n="install.copy">copiar</span>
             </button>
-            <pre id="code-install-1"><code>curl -fsSL https://raw.githubusercontent.com/capitv/pixzclaw-pi/main/scripts/force-reinstall-plugins.sh | bash -s -- v0.4.0-plugins</code></pre>
+            <pre id="code-install-1"><code>curl -fsSL https://raw.githubusercontent.com/capitv/pixzclaw-pi/main/scripts/force-reinstall-plugins.sh | bash -s -- <span data-version-tag>v0.5.0-plugins</span></code></pre>
           </div>
         </div>
 
@@ -666,7 +726,7 @@ zeroclaw config set plugins.entries.pixzclaw-brief.config.rpc_url "https://api.m
         </details>
         <details class="faq__item">
           <summary data-i18n="faq.q6.q">Como o lembrete automático funciona sem serviço externo?</summary>
-          <div class="faq__a"><p data-i18n="faq.q6.a">Ele usa o cron nativo do ZeroClaw. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo.</p></div>
+          <div class="faq__a"><p data-i18n="faq.q6.a">Ele usa o cron nativo do <b class="zc">ZeroClaw</b>. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo. Está disponível desde a v0.5.0.</p></div>
         </details>
       </div>
     </div>
@@ -677,15 +737,25 @@ zeroclaw config set plugins.entries.pixzclaw-brief.config.rpc_url "https://api.m
 <footer class="footer">
   <div class="wrap footer__grid">
     <div class="footer__id">
-      <p class="footer__brand"><span aria-hidden="true">🦞</span> PixZClaw</p>
-      <p class="footer__credit" data-i18n="footer.credit">Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code>wasm32-wasip2</code> · 101 testes host · sem <code>solana-sdk</code>.</p>
+      <p class="footer__brand">
+        <span class="footer__mark" aria-hidden="true">
+          <svg class="mark mark--mono" viewBox="0 0 48 48" focusable="false">
+            <path class="mk-arc" d="M7.3 21A17 17 0 0 1 39.4 16.8A5.5 5.5 0 0 1 30.5 19"/>
+            <path class="mk-arc" d="M7.3 27A17 17 0 0 0 39.4 31.2A5.5 5.5 0 0 0 30.5 29"/>
+            <path class="mk-node" d="M24 19.4 28.6 24 24 28.6 19.4 24Z"/>
+          </svg>
+        </span>
+        PixZClaw <span class="footer__ver" data-version>v0.5.0</span>
+      </p>
+      <p class="footer__credit" data-i18n="footer.credit">Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class="zc">wasm32-wasip2</code> · 101 testes host · sem <code class="sol">solana-sdk</code>.</p>
       <p class="footer__license" data-i18n="footer.license">Licenciado sob MIT / Apache-2.0.</p>
+      <p class="footer__tm" data-i18n="footer.tm">ZeroClaw e o logo do ZeroClaw são marcas da ZeroClaw Labs. O PixZClaw é um plugin de terceiros, com símbolo e identidade próprios.</p>
     </div>
     <nav class="footer__nav" aria-label="Links do projeto" data-i18n-aria="a11y.footerNav">
       <ul>
-        <li><a href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123" target="_blank" rel="noopener" data-i18n="footer.pr">PR #123 · zeroclaw-plugins</a></li>
-        <li><a href="https://github.com/capitv/pixzclaw-pi/releases/tag/v0.4.0-plugins" target="_blank" rel="noopener" data-i18n="footer.release">Release v0.4.0</a></li>
+        <li><a href="https://github.com/capitv/pixzclaw-pi" target="_blank" rel="noopener" data-i18n="footer.repo">Repositório do PixZClaw</a></li>
+        <li><a href="https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.0-plugins" data-version-href="https://github.com/capitv/pixzclaw-pi/releases/tag/{tag}" target="_blank" rel="noopener" data-i18n="footer.release">Release v0.5.0</a></li>
+        <li><a href="https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123" target="_blank" rel="noopener" data-i18n="footer.pr">PR #123 · no repo oficial do ZeroClaw</a></li>
         <li><a href="https://docs.zeroclawlabs.ai/master/en/introduction.html" target="_blank" rel="noopener" data-i18n="footer.docs">Docs ZeroClaw</a></li>
         <li><a href="https://docs.solanapay.com/spec" target="_blank" rel="noopener" data-i18n="footer.solanapay">Solana Pay spec</a></li>
       </ul>

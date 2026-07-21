@@ -2,6 +2,19 @@
   "use strict";
 
   /* ============================================================
+     Single source of truth for the shipped version.
+     Bump it here and nowhere else: it is injected into
+       [data-version]      → "v0.5.0"        (brand chip, footer)
+       [data-version-tag]  → "v0.5.0-plugins" (inside the install command)
+       [data-version-href] → href template, {tag} / {version}
+       i18n strings        → the {version} placeholder
+     ============================================================ */
+
+  var VERSION = "0.5.0";
+  var VERSION_LABEL = "v" + VERSION;
+  var PLUGIN_TAG = VERSION_LABEL + "-plugins";
+
+  /* ============================================================
      i18n dictionary
      Keys are dot-paths matching data-i18n / data-i18n-aria in index.html.
      Values may contain safe inline HTML (<code>, <strong>, <em>, <br>)
@@ -27,11 +40,11 @@
       "nav.install": "instalar",
 
       /* ---------- hero ---------- */
-      "hero.eyebrow": "plugin ZeroClaw · T0/T1 · sem private key",
+      "hero.eyebrow": "plugin <b class=\"zc\">ZeroClaw</b> · T0/T1 · sem private key",
       "hero.headline": "Cobra em BRL.<br>Recebe em PIX <em>ou</em> USDC.",
       "hero.sub": "Uma fatura, dois trilhos de pagamento. Seu cliente escolhe PIX (BRL) ou USDC via Solana Pay — você opera tudo pelo Telegram, num Raspberry Pi ou numa VPS de 1 GB.",
       "hero.ctaPrimary": "Instalar no meu host",
-      "hero.ctaSecondary": "Ler o PR #123",
+      "hero.ctaSecondary": "Abrir o repositório",
       "hero.spec.runtime": "runtime",
       "hero.spec.tools": "ferramentas",
       "hero.spec.host": "host de produção",
@@ -62,18 +75,24 @@
       "proof.srTitle": "Provas verificáveis",
       "proof.tests.label": "testes host",
       "proof.tests.note": "<code>cargo test</code> sem rede",
-      "proof.pr.label": "PR aberto",
-      "proof.pr.note": "no repositório oficial <code>zeroclaw-plugins</code>",
+      "proof.pr.label": "PR no repo oficial",
+      "proof.pr.note": "aberto em <code class=\"zc\">zeroclaw-labs/zeroclaw-plugins</code>",
       "proof.prod.label": "em produção",
       "proof.prod.note": "num Raspberry Pi, operado por Telegram",
-      "proof.nosdk.label": "linhas de <code>solana-sdk</code>",
+      "proof.nosdk.label": "linhas de <code class=\"sol\">solana-sdk</code>",
       "proof.nosdk.note": "core puro + shim fino",
       "proof.bounty": "Construído para o bounty ZeroClaw × Superteam Brasil.",
 
       /* ---------- 01 fluxo ---------- */
       "flow.kicker": "O caminho do dinheiro",
       "flow.title": "Uma fatura sai.<br>Dois trilhos voltam.",
-      "flow.lead": "Não é on-ramp, não é câmbio. São dois trilhos independentes carregando o mesmo <code>invoice_id</code>: o PIX vai pro banco do lojista, o USDC vai pra carteira dele via Solana Pay com uma <em>reference</em> única. Só um dos dois pode ser verificado por software — e a página inteira é honesta sobre qual.",
+      "flow.lead": "Não é on-ramp, não é câmbio. São dois trilhos independentes carregando o mesmo <code>invoice_id</code>: o PIX vai pro banco do lojista, o USDC vai pra carteira dele via Solana Pay com uma <em class=\"em-sol\">reference</em> única. Só um dos dois pode ser verificado por software — e a página inteira é honesta sobre qual.",
+
+      "legend.title": "Legenda de cores — cada cor é um ator, nunca enfeite",
+      "legend.brand": "<b>PixZClaw</b> — o plugin, a marca, o que você instala",
+      "legend.host": "<b>ZeroClaw</b> — o runtime host, o cron, o agente",
+      "legend.pix": "<b>trilho PIX</b> — BRL, banco, confirmação humana",
+      "legend.sol": "<b>trilho Solana</b> — USDC, on-chain, valor conferido",
 
       "dg.a11yTitle": "Diagrama: da fatura aos dois trilhos de pagamento até o recibo",
       "dg.a11yDesc": "A fatura emitida no Telegram se divide em dois trilhos. O trilho PIX gera um código Copia e Cola, o dinheiro cai no banco do lojista e só o operador pode confirmar. O trilho Solana gera uma URL Solana Pay com reference, o USDC cai na carteira do lojista e o valor recebido é conferido on-chain. Os dois convergem num recibo.",
@@ -110,19 +129,19 @@
       /* ---------- 02 ferramentas ---------- */
       "tools.kicker": "As três ferramentas",
       "tools.title": "Uma escreve. Duas só leem.",
-      "tools.lead": "Três plugins WebAssembly compilados para <code>wasm32-wasip2</code>. Só um deles produz algo — e mesmo esse não move dinheiro, só monta a cobrança.",
+      "tools.lead": "Três plugins WebAssembly compilados para <code class=\"zc\">wasm32-wasip2</code>. Só um deles produz algo — e mesmo esse não move dinheiro, só monta a cobrança.",
       "tools.outLabel": "saída real da ferramenta",
       "tools.t0tooltip": "read-only",
 
       "tools.t1.tag": "emite a fatura dual",
       "tools.t1.desc": "Emite uma fatura com dois trilhos: PIX Copia e Cola (EMV+CRC16 de verdade) e URL Solana Pay em USDC, com o mesmo <code>invoice_id</code> nos dois. QR codes por link, teto de valor e destino travado — pronto para encaminhar ao cliente.",
       "tools.t1.f1": "payload EMV montado e assinado com CRC16 — não é imagem, é código válido",
-      "tools.t1.f2": "a <em>reference</em> do Solana Pay é o próprio <code>invoice_id</code>",
+      "tools.t1.f2": "a <em class=\"em-sol\">reference</em> do Solana Pay é o próprio <code>invoice_id</code>",
       "tools.t1.f3": "acima do teto, falha fechado: recusa em vez de emitir",
       "tools.t1.output": "🦞 PixZClaw — Fatura #412\n💰 R$ 150.00 · ₮ 27.272727 USDC\n\n🇧🇷 PIX (BRL)\n📷 QR (toque): …\nOu copie o código (toque para copiar):\n00020126…5204000053039865802BR…6304AB12\n\n◎ Solana Pay (USDC)\n📷 QR (toque): …\nEscaneie com Phantom/Solflare.\n\n👉 Encaminhe esta mensagem ao cliente\n🧾 Fatura 412 · cotação R$/USDC usada: 5.5\n🔒 teto R$ 1000 · destino travado=sim",
 
       "tools.t2.tag": "o juiz on-chain",
-      "tools.t2.desc": "Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code>pre/postTokenBalances</code>. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo compartilhável com link do Solscan.",
+      "tools.t2.desc": "Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code class=\"sol\">pre/postTokenBalances</code>. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo compartilhável com link do Solscan.",
       "tools.t2.v1": "o valor bate",
       "tools.t2.v2": "diz exatamente quanto falta",
       "tools.t2.v3": "recebeu a mais, e avisa",
@@ -134,11 +153,12 @@
 
       /* ---------- 03 lembrete ---------- */
       "rem.kicker": "O lembrete que se apaga",
+      "rem.badge": "novo na {version} · lembrete automático",
       "rem.title": "Você não precisa perguntar<br>se o cliente pagou.",
-      "rem.lead": "Toda fatura vem com uma oferta. Aceite e o agente cria um job no cron nativo do ZeroClaw — sem serviço externo, sem webhook, sem fila.",
+      "rem.lead": "Toda fatura vem com uma oferta. Aceite e o agente cria um job no cron nativo do <b class=\"zc\">ZeroClaw</b> — sem serviço externo, sem webhook, sem fila.",
       "rem.offer": "🔔 avisa quando a 412 pagar",
       "rem.silence": "E o mais importante: enquanto está PENDING, <strong>silêncio</strong>. O bot nunca te manda “ainda não pagou”. Ele só fala quando tem um valor conferido pra mostrar.",
-      "rem.t1": "O agente registra um job no cron do ZeroClaw, amarrado ao <code>invoice_id</code>.",
+      "rem.t1": "O agente registra um job no cron do <b class=\"zc\">ZeroClaw</b>, amarrado ao <code>invoice_id</code>.",
       "rem.t2k": "a cada 5 min",
       "rem.t2": "O job chama <code>invoice_status</code> e confere o valor recebido on-chain.",
       "rem.t3k": "PENDING",
@@ -157,7 +177,7 @@
       "not.i2.title": "Não vê o PIX do seu banco.",
       "not.i2.body": "PIX bancário não existe on-chain. A ferramenta nunca marca o trilho PIX como pago por conta própria: quem confirma o recebimento é o operador.",
       "not.i3.title": "Não guarda private key.",
-      "not.i3.body": "Nenhuma chave privada é pedida, lida ou salva. A única coisa que o plugin conhece é a <em>pubkey</em> do lojista — que é pública por definição.",
+      "not.i3.body": "Nenhuma chave privada é pedida, lida ou salva. A única coisa que o plugin conhece é a <em class=\"em-sol\">pubkey</em> do lojista — que é pública por definição.",
       "not.i4.title": "Não assina transação.",
       "not.i4.body": "Quem assina é o cliente, na carteira dele. O plugin monta a cobrança e, depois disso, só lê a blockchain.",
       "not.close": "Cada “não” dessa lista é uma superfície de ataque que simplesmente não existe.",
@@ -175,6 +195,11 @@
       "trust.i4.body": "Instrução maliciosa não fura o teto: um pedido de “999999999,99” bate no limite e é recusado, em vez de gerar a fatura.",
       "trust.i5.title": "Honestidade no PIX",
       "trust.i5.body": "O PIX bancário não aparece on-chain, então o PixZClaw nunca inventa “pago”. Só marca o PIX como pago quando o operador confirma.",
+
+      /* ---------- tese / respiro ---------- */
+      "thesis.title": "Duas pinças.<br>Uma fatura no meio.",
+      "thesis.body": "A marca é a tese. A pinça de cima é o trilho PIX; a de baixo é o trilho Solana. Elas se fecham sobre o mesmo losango — o <code>invoice_id</code> que os dois carregam. Nenhuma das duas passa por dentro da outra: são vias independentes, e só uma delas a máquina consegue conferir sozinha.",
+      "thesis.foot": "Roda no ZeroClaw, mas o símbolo é nosso. Nome e logo do ZeroClaw são marcas da ZeroClaw Labs.",
 
       /* ---------- 06 onde roda ---------- */
       "where.kicker": "Onde roda",
@@ -197,8 +222,8 @@
       /* ---------- 07 instalação ---------- */
       "install.kicker": "Instalação",
       "install.title": "Três comandos<br>e um restart.",
-      "install.lead": "Roda em qualquer host ZeroClaw — inclusive num Raspberry Pi 3. Instalar, configurar, reiniciar.",
-      "install.step1.label": "Instale os 3 plugins da release v0.4.0 com um comando:",
+      "install.lead": "Roda em qualquer host <b class=\"zc\">ZeroClaw</b> — inclusive num Raspberry Pi 3. Instalar, configurar, reiniciar.",
+      "install.step1.label": "Instale os 3 plugins da release {version} com um comando:",
       "install.step2.label": "Ajuste a chave PIX, o destino Solana e os limites. Use seus próprios valores:",
       "install.step3.label": "Reinicie o serviço para aplicar a config:",
       "install.copy": "copiar",
@@ -218,15 +243,17 @@
       "faq.q5.q": "É seguro deixar um agente cobrar por mim?",
       "faq.q5.a": "Sim. São ferramentas T0/T1 (sem private key), com teto de valor, destino travado e proteção contra prompt injection. O agente monta a cobrança; quem paga é sempre o cliente na carteira dele.",
       "faq.q6.q": "Como o lembrete automático funciona sem serviço externo?",
-      "faq.q6.a": "Ele usa o cron nativo do ZeroClaw. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo.",
+      "faq.q6.a": "Ele usa o cron nativo do <b class=\"zc\">ZeroClaw</b>. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo. Está disponível desde a {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code>wasm32-wasip2</code> · 101 testes host · sem <code>solana-sdk</code>.",
-      "footer.pr": "PR #123 · zeroclaw-plugins",
-      "footer.release": "Release v0.4.0",
+      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class=\"zc\">wasm32-wasip2</code> · 101 testes host · sem <code class=\"sol\">solana-sdk</code>.",
+      "footer.repo": "Repositório do PixZClaw",
+      "footer.pr": "PR #123 · no repo oficial do ZeroClaw",
+      "footer.release": "Release {version}",
       "footer.docs": "Docs ZeroClaw",
       "footer.solanapay": "Solana Pay spec",
       "footer.license": "Licenciado sob MIT / Apache-2.0.",
+      "footer.tm": "ZeroClaw e o logo do ZeroClaw são marcas da ZeroClaw Labs. O PixZClaw é um plugin de terceiros, com símbolo e identidade próprios.",
       "footer.fx": "Preços desta página conferidos em 21/07/2026 · US$ 1 = R$ 5,07."
     },
 
@@ -247,11 +274,11 @@
       "nav.install": "install",
 
       /* ---------- hero ---------- */
-      "hero.eyebrow": "ZeroClaw plugin · T0/T1 · no private key",
+      "hero.eyebrow": "<b class=\"zc\">ZeroClaw</b> plugin · T0/T1 · no private key",
       "hero.headline": "Charge in BRL.<br>Get paid in PIX <em>or</em> USDC.",
       "hero.sub": "One invoice, two payment rails. Your customer picks PIX (BRL) or USDC via Solana Pay — you run it all from Telegram, on a Raspberry Pi or a 1 GB VPS.",
       "hero.ctaPrimary": "Install on my host",
-      "hero.ctaSecondary": "Read PR #123",
+      "hero.ctaSecondary": "Open the repository",
       "hero.spec.runtime": "runtime",
       "hero.spec.tools": "tools",
       "hero.spec.host": "production host",
@@ -282,18 +309,24 @@
       "proof.srTitle": "Verifiable proof",
       "proof.tests.label": "host tests",
       "proof.tests.note": "<code>cargo test</code>, no network",
-      "proof.pr.label": "PR open",
-      "proof.pr.note": "on the official <code>zeroclaw-plugins</code> repo",
+      "proof.pr.label": "PR on the official repo",
+      "proof.pr.note": "opened on <code class=\"zc\">zeroclaw-labs/zeroclaw-plugins</code>",
       "proof.prod.label": "in production",
       "proof.prod.note": "on a Raspberry Pi, operated over Telegram",
-      "proof.nosdk.label": "lines of <code>solana-sdk</code>",
+      "proof.nosdk.label": "lines of <code class=\"sol\">solana-sdk</code>",
       "proof.nosdk.note": "pure core + thin shim",
       "proof.bounty": "Built for the ZeroClaw × Superteam Brasil bounty.",
 
       /* ---------- 01 flow ---------- */
       "flow.kicker": "How the money moves",
       "flow.title": "One invoice out.<br>Two rails back.",
-      "flow.lead": "Not an on-ramp, not an exchange. Two independent rails carrying the same <code>invoice_id</code>: PIX lands in the merchant's bank, USDC lands in the merchant's wallet via Solana Pay with a unique <em>reference</em>. Only one of them can be verified by software — and this page is honest about which.",
+      "flow.lead": "Not an on-ramp, not an exchange. Two independent rails carrying the same <code>invoice_id</code>: PIX lands in the merchant's bank, USDC lands in the merchant's wallet via Solana Pay with a unique <em class=\"em-sol\">reference</em>. Only one of them can be verified by software — and this page is honest about which.",
+
+      "legend.title": "Colour legend — every colour is an actor, never decoration",
+      "legend.brand": "<b>PixZClaw</b> — the plugin, the brand, what you install",
+      "legend.host": "<b>ZeroClaw</b> — the host runtime, the cron, the agent",
+      "legend.pix": "<b>PIX rail</b> — BRL, bank, human confirmation",
+      "legend.sol": "<b>Solana rail</b> — USDC, on-chain, amount verified",
 
       "dg.a11yTitle": "Diagram: from the invoice through both payment rails to the receipt",
       "dg.a11yDesc": "The invoice issued on Telegram splits into two rails. The PIX rail produces a Copy & Paste code, the money lands in the merchant's bank and only the operator can confirm it. The Solana rail produces a Solana Pay URL with a reference, USDC lands in the merchant's wallet and the received amount is verified on-chain. Both converge into a receipt.",
@@ -330,19 +363,19 @@
       /* ---------- 02 tools ---------- */
       "tools.kicker": "The three tools",
       "tools.title": "One writes. Two only read.",
-      "tools.lead": "Three WebAssembly plugins compiled to <code>wasm32-wasip2</code>. Only one of them produces anything — and even that one moves no money, it just builds the charge.",
+      "tools.lead": "Three WebAssembly plugins compiled to <code class=\"zc\">wasm32-wasip2</code>. Only one of them produces anything — and even that one moves no money, it just builds the charge.",
       "tools.outLabel": "real tool output",
       "tools.t0tooltip": "read-only",
 
       "tools.t1.tag": "issues the dual invoice",
       "tools.t1.desc": "Issues one invoice on two rails: PIX Copy & Paste (real EMV+CRC16) plus a Solana Pay USDC URL, sharing the same <code>invoice_id</code>. QR codes by link, amount cap, and locked recipient — ready to forward to the customer.",
       "tools.t1.f1": "EMV payload assembled and signed with CRC16 — not a picture, a valid code",
-      "tools.t1.f2": "the Solana Pay <em>reference</em> is the <code>invoice_id</code> itself",
+      "tools.t1.f2": "the Solana Pay <em class=\"em-sol\">reference</em> is the <code>invoice_id</code> itself",
       "tools.t1.f3": "above the cap it fails closed: it refuses instead of issuing",
       "tools.t1.output": "🦞 PixZClaw — Fatura #412\n💰 R$ 150.00 · ₮ 27.272727 USDC\n\n🇧🇷 PIX (BRL)\n📷 QR (toque): …\nOu copie o código (toque para copiar):\n00020126…5204000053039865802BR…6304AB12\n\n◎ Solana Pay (USDC)\n📷 QR (toque): …\nEscaneie com Phantom/Solflare.\n\n👉 Encaminhe esta mensagem ao cliente\n🧾 Fatura 412 · cotação R$/USDC usada: 5.5\n🔒 teto R$ 1000 · destino travado=sim",
 
       "tools.t2.tag": "the on-chain judge",
-      "tools.t2.desc": "Checks the USDC payment straight on-chain: it verifies the amount the merchant ACTUALLY received, from the <code>pre/postTokenBalances</code> delta. It sums partial payments, never says PAID without a verified amount, and generates a shareable receipt with a Solscan link.",
+      "tools.t2.desc": "Checks the USDC payment straight on-chain: it verifies the amount the merchant ACTUALLY received, from the <code class=\"sol\">pre/postTokenBalances</code> delta. It sums partial payments, never says PAID without a verified amount, and generates a shareable receipt with a Solscan link.",
       "tools.t2.v1": "the amount matches",
       "tools.t2.v2": "says exactly how much is missing",
       "tools.t2.v3": "received more, and says so",
@@ -354,11 +387,12 @@
 
       /* ---------- 03 reminder ---------- */
       "rem.kicker": "The reminder that deletes itself",
+      "rem.badge": "new in {version} · automatic reminder",
       "rem.title": "You never have to ask<br>whether the customer paid.",
-      "rem.lead": "Every invoice comes with an offer. Accept it and the agent creates a job on ZeroClaw's native cron — no external service, no webhook, no queue.",
+      "rem.lead": "Every invoice comes with an offer. Accept it and the agent creates a job on <b class=\"zc\">ZeroClaw</b>'s native cron — no external service, no webhook, no queue.",
       "rem.offer": "🔔 ping me when 412 gets paid",
       "rem.silence": "And the important part: while it's PENDING, <strong>silence</strong>. The bot never sends you “still not paid”. It only speaks when it has a verified amount to show.",
-      "rem.t1": "The agent registers a job on ZeroClaw's cron, tied to the <code>invoice_id</code>.",
+      "rem.t1": "The agent registers a job on <b class=\"zc\">ZeroClaw</b>'s cron, tied to the <code>invoice_id</code>.",
       "rem.t2k": "every 5 min",
       "rem.t2": "The job calls <code>invoice_status</code> and verifies the amount received on-chain.",
       "rem.t3k": "PENDING",
@@ -377,7 +411,7 @@
       "not.i2.title": "It doesn't see your bank's PIX.",
       "not.i2.body": "Bank PIX doesn't exist on-chain. The tool never marks the PIX rail as paid on its own: the operator is the one who confirms receipt.",
       "not.i3.title": "It doesn't hold a private key.",
-      "not.i3.body": "No private key is ever requested, read or stored. The only thing the plugin knows is the merchant's <em>pubkey</em> — which is public by definition.",
+      "not.i3.body": "No private key is ever requested, read or stored. The only thing the plugin knows is the merchant's <em class=\"em-sol\">pubkey</em> — which is public by definition.",
       "not.i4.title": "It doesn't sign transactions.",
       "not.i4.body": "The customer signs, from their own wallet. The plugin builds the charge and, after that, only reads the blockchain.",
       "not.close": "Every “no” on this list is an attack surface that simply doesn't exist.",
@@ -395,6 +429,11 @@
       "trust.i4.body": "A malicious instruction can't break the cap: a request for “999999999.99” hits the limit and is refused instead of minting the invoice.",
       "trust.i5.title": "Honesty on PIX",
       "trust.i5.body": "Bank PIX isn't visible on-chain, so PixZClaw never fakes a “paid”. It only marks PIX paid once the operator confirms.",
+
+      /* ---------- thesis / breathing band ---------- */
+      "thesis.title": "Two pincers.<br>One invoice between them.",
+      "thesis.body": "The mark is the thesis. The upper pincer is the PIX rail; the lower one is the Solana rail. They close on the same rhombus — the <code>invoice_id</code> both of them carry. Neither one runs through the other: they are independent routes, and only one of them can be verified by a machine on its own.",
+      "thesis.foot": "It runs on ZeroClaw, but the symbol is ours. The ZeroClaw name and logo are trademarks of ZeroClaw Labs.",
 
       /* ---------- 06 where it runs ---------- */
       "where.kicker": "Where it runs",
@@ -417,8 +456,8 @@
       /* ---------- 07 install ---------- */
       "install.kicker": "Installation",
       "install.title": "Three commands<br>and one restart.",
-      "install.lead": "Runs on any ZeroClaw host — including a Raspberry Pi 3. Install, configure, restart.",
-      "install.step1.label": "Install the 3 plugins from the v0.4.0 release with one command:",
+      "install.lead": "Runs on any <b class=\"zc\">ZeroClaw</b> host — including a Raspberry Pi 3. Install, configure, restart.",
+      "install.step1.label": "Install the 3 plugins from the {version} release with one command:",
       "install.step2.label": "Set your PIX key, Solana recipient, and limits. Use your own values:",
       "install.step3.label": "Restart the service to apply the config:",
       "install.copy": "copy",
@@ -438,15 +477,17 @@
       "faq.q5.q": "Is it safe to let an agent charge on my behalf?",
       "faq.q5.a": "Yes. These are T0/T1 tools (no private key), with an amount cap, a locked recipient, and prompt-injection protection. The agent builds the charge; the customer always pays from their own wallet.",
       "faq.q6.q": "How does the automatic reminder work with no external service?",
-      "faq.q6.a": "It uses ZeroClaw's native cron. The agent registers a job tied to the <code>invoice_id</code>, which calls <code>invoice_status</code> every 5 minutes, pings you on Telegram when the money lands — and then removes itself.",
+      "faq.q6.a": "It uses <b class=\"zc\">ZeroClaw</b>'s native cron. The agent registers a job tied to the <code>invoice_id</code>, which calls <code>invoice_status</code> every 5 minutes, pings you on Telegram when the money lands — and then removes itself. It has shipped since {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code>wasm32-wasip2</code> · 101 host tests · no <code>solana-sdk</code>.",
-      "footer.pr": "PR #123 · zeroclaw-plugins",
-      "footer.release": "Release v0.4.0",
+      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code class=\"zc\">wasm32-wasip2</code> · 101 host tests · no <code class=\"sol\">solana-sdk</code>.",
+      "footer.repo": "PixZClaw repository",
+      "footer.pr": "PR #123 · on ZeroClaw's official repo",
+      "footer.release": "Release {version}",
       "footer.docs": "ZeroClaw Docs",
       "footer.solanapay": "Solana Pay spec",
       "footer.license": "Licensed under MIT / Apache-2.0.",
+      "footer.tm": "ZeroClaw and the ZeroClaw logo are trademarks of ZeroClaw Labs. PixZClaw is a third-party plugin, with its own symbol and identity.",
       "footer.fx": "Prices on this page checked on 2026-07-21 · US$1 = R$5.07."
     }
   };
@@ -470,7 +511,27 @@
   }
 
   function lookup(dict, key) {
-    return dict[key] != null ? dict[key] : translations.pt[key];
+    var value = dict[key] != null ? dict[key] : translations.pt[key];
+    if (typeof value !== "string") return value;
+    return value.replace(/\{version\}/g, VERSION_LABEL).replace(/\{tag\}/g, PLUGIN_TAG);
+  }
+
+  /* Version injection for the plain (non-translated) mounting points. */
+  function applyVersion() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-version]"), function (el) {
+      el.textContent = VERSION_LABEL;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-version-tag]"), function (el) {
+      el.textContent = PLUGIN_TAG;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-version-href]"), function (el) {
+      el.setAttribute(
+        "href",
+        el.getAttribute("data-version-href")
+          .replace(/\{tag\}/g, PLUGIN_TAG)
+          .replace(/\{version\}/g, VERSION_LABEL)
+      );
+    });
   }
 
   /* Translates a subtree (inclusive of the root itself). */
@@ -523,6 +584,8 @@
       applyLanguage(btn.getAttribute("data-lang-btn"));
     });
   });
+
+  applyVersion();
 
   var initialLang = getStoredLang();
   if (initialLang !== "pt" && initialLang !== "en") initialLang = "pt";
