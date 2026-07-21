@@ -156,6 +156,80 @@ impl<T: HttpTransport> RpcClient<T> {
         Ok(trim_trailing_zeros(&s))
     }
 
+    /// Call `getTransaction` with `jsonParsed` and extract the net amount of
+    /// `usdc_mint` tokens **received by `merchant`** in that transaction.
+    ///
+    /// Uses `meta.preTokenBalances` / `meta.postTokenBalances` (owner + mint
+    /// filtered), so both `transfer` and `transferChecked` are covered without
+    /// parsing instructions. `delta = post − pre`.
+    ///
+    /// Returns:
+    /// - `Ok(Some(ReceivedAmount))` when the transaction + `meta` are present
+    ///   (even if the computed delta is `0.0`).
+    /// - `Ok(None)` when the RPC returned no transaction (`result` null) or the
+    ///   `meta` block is absent — i.e. the value cannot be verified. Callers
+    ///   must degrade honestly and never report PAID in that case.
+    /// - `Err(RpcError)` on a transport / JSON-RPC error.
+    pub fn get_transaction(
+        &self,
+        signature: &str,
+        usdc_mint: &str,
+        merchant: &str,
+    ) -> Result<Option<ReceivedAmount>, RpcError> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getTransaction",
+            "params": [
+                signature,
+                {
+                    "encoding": "jsonParsed",
+                    "maxSupportedTransactionVersion": 0
+                }
+            ]
+        });
+        let resp = self.http.post_json(&self.endpoint, &body)?;
+        Self::rpc_result(&resp)?;
+
+        let result = match resp.get("result") {
+            Some(r) if !r.is_null() => r,
+            _ => return Ok(None), // transaction not found / not confirmed
+        };
+        let meta = match result.get("meta") {
+            Some(m) if !m.is_null() => m,
+            _ => return Ok(None), // no meta → cannot verify value honestly
+        };
+
+        let pre = sum_owner_mint(meta.get("preTokenBalances"), usdc_mint, merchant);
+        let post = sum_owner_mint(meta.get("postTokenBalances"), usdc_mint, merchant);
+        let ui_amount = post - pre;
+
+        let block_time = result.get("blockTime").and_then(|t| t.as_i64());
+        let slot = result.get("slot").and_then(|s| s.as_u64());
+        let decimals = meta
+            .get("postTokenBalances")
+            .and_then(|v| v.as_array())
+            .and_then(|arr| {
+                arr.iter().find_map(|b| {
+                    let m = b.get("mint").and_then(|v| v.as_str());
+                    if m == Some(usdc_mint) {
+                        b.pointer("/uiTokenAmount/decimals")
+                            .and_then(|v| v.as_u64())
+                            .map(|d| d as u8)
+                    } else {
+                        None
+                    }
+                })
+            });
+
+        Ok(Some(ReceivedAmount {
+            ui_amount,
+            block_time,
+            slot,
+            decimals,
+        }))
+    }
+
     fn rpc_result(resp: &Value) -> Result<(), RpcError> {
         if let Some(err) = resp.get("error") {
             let msg = err
@@ -166,6 +240,55 @@ impl<T: HttpTransport> RpcClient<T> {
         }
         Ok(())
     }
+}
+
+/// Net token amount received by an owner in a single transaction.
+///
+/// `ui_amount` is `postTokenBalances − preTokenBalances` (owner + mint
+/// filtered). A value `<= 0.0` means the owner received nothing for that mint.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReceivedAmount {
+    /// Net UI amount (human units) received by the owner for the mint.
+    pub ui_amount: f64,
+    /// Block time (unix seconds) from the transaction, if available.
+    pub block_time: Option<i64>,
+    /// Slot of the transaction, if available.
+    pub slot: Option<u64>,
+    /// Token decimals for the mint, if reported.
+    pub decimals: Option<u8>,
+}
+
+/// Sum `uiTokenAmount` UI values for entries matching `mint` **and** `owner`.
+///
+/// Defensive: accepts `uiAmount` (number, may be null) or `uiAmountString`
+/// (decimal string). Missing / unparseable entries contribute `0.0`.
+fn sum_owner_mint(balances: Option<&Value>, mint: &str, owner: &str) -> f64 {
+    let arr = match balances.and_then(|v| v.as_array()) {
+        Some(a) => a,
+        None => return 0.0,
+    };
+    let mut total = 0.0_f64;
+    for b in arr {
+        let m = b.get("mint").and_then(|v| v.as_str());
+        let o = b.get("owner").and_then(|v| v.as_str());
+        if m != Some(mint) || o != Some(owner) {
+            continue;
+        }
+        if let Some(ui) = b
+            .pointer("/uiTokenAmount/uiAmount")
+            .and_then(|v| v.as_f64())
+        {
+            total += ui;
+        } else if let Some(s) = b
+            .pointer("/uiTokenAmount/uiAmountString")
+            .and_then(|v| v.as_str())
+        {
+            if let Ok(x) = s.parse::<f64>() {
+                total += x;
+            }
+        }
+    }
+    total
 }
 
 fn trim_trailing_zeros(s: &str) -> String {
@@ -277,6 +400,131 @@ mod tests {
         let body = client.http.last_body.borrow().clone().unwrap();
         assert_eq!(body["method"], "getSignaturesForAddress");
         assert_eq!(body["params"][1]["limit"], 5);
+    }
+
+    fn tx_client(result: Value) -> RpcClient<MockHttp> {
+        let response = json!({ "jsonrpc": "2.0", "id": 1, "result": result });
+        let http = MockHttp {
+            response: RefCell::new(response),
+            last_body: RefCell::new(None),
+        };
+        RpcClient::new("http://localhost", http)
+    }
+
+    const MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const MERCHANT: &str = "MerchantOwner1111111111111111111111111111111";
+
+    fn bal(mint: &str, owner: &str, ui: f64) -> Value {
+        json!({
+            "accountIndex": 1,
+            "mint": mint,
+            "owner": owner,
+            "uiTokenAmount": {
+                "amount": format!("{}", (ui * 1_000_000.0) as u64),
+                "decimals": 6,
+                "uiAmount": ui,
+                "uiAmountString": format!("{ui}")
+            }
+        })
+    }
+
+    #[test]
+    fn get_transaction_extracts_delta() {
+        let result = json!({
+            "blockTime": 1_700_000_000,
+            "slot": 99,
+            "meta": {
+                "err": null,
+                "preTokenBalances": [ bal(MINT, MERCHANT, 5.0) ],
+                "postTokenBalances": [ bal(MINT, MERCHANT, 32.27) ]
+            }
+        });
+        let client = tx_client(result);
+        let got = client.get_transaction("Sig", MINT, MERCHANT).unwrap().unwrap();
+        assert!((got.ui_amount - 27.27).abs() < 1e-9, "delta={}", got.ui_amount);
+        assert_eq!(got.block_time, Some(1_700_000_000));
+        assert_eq!(got.decimals, Some(6));
+
+        let body = client.http.last_body.borrow().clone().unwrap();
+        assert_eq!(body["method"], "getTransaction");
+        assert_eq!(body["params"][1]["encoding"], "jsonParsed");
+        assert_eq!(body["params"][1]["maxSupportedTransactionVersion"], 0);
+    }
+
+    #[test]
+    fn get_transaction_account_created_this_tx() {
+        // No pre-balance for the merchant (ATA created in this tx) → delta = post.
+        let result = json!({
+            "blockTime": 1,
+            "meta": {
+                "preTokenBalances": [],
+                "postTokenBalances": [ bal(MINT, MERCHANT, 90.0) ]
+            }
+        });
+        let client = tx_client(result);
+        let got = client.get_transaction("Sig", MINT, MERCHANT).unwrap().unwrap();
+        assert!((got.ui_amount - 90.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn get_transaction_other_mint_does_not_count() {
+        let result = json!({
+            "meta": {
+                "preTokenBalances": [],
+                "postTokenBalances": [ bal("SomeOtherMint111", MERCHANT, 90.0) ]
+            }
+        });
+        let client = tx_client(result);
+        let got = client.get_transaction("Sig", MINT, MERCHANT).unwrap().unwrap();
+        assert_eq!(got.ui_amount, 0.0);
+    }
+
+    #[test]
+    fn get_transaction_wrong_owner_does_not_count() {
+        let result = json!({
+            "meta": {
+                "preTokenBalances": [],
+                "postTokenBalances": [ bal(MINT, "SomeoneElse111", 90.0) ]
+            }
+        });
+        let client = tx_client(result);
+        let got = client.get_transaction("Sig", MINT, MERCHANT).unwrap().unwrap();
+        assert_eq!(got.ui_amount, 0.0);
+    }
+
+    #[test]
+    fn get_transaction_missing_meta_returns_none() {
+        let result = json!({ "blockTime": 1, "slot": 5 });
+        let client = tx_client(result);
+        assert_eq!(client.get_transaction("Sig", MINT, MERCHANT).unwrap(), None);
+    }
+
+    #[test]
+    fn get_transaction_null_result_returns_none() {
+        let client = tx_client(Value::Null);
+        assert_eq!(client.get_transaction("Sig", MINT, MERCHANT).unwrap(), None);
+    }
+
+    #[test]
+    fn get_transaction_parses_ui_amount_string_when_uiamount_null() {
+        let result = json!({
+            "meta": {
+                "preTokenBalances": [],
+                "postTokenBalances": [{
+                    "mint": MINT,
+                    "owner": MERCHANT,
+                    "uiTokenAmount": {
+                        "amount": "90000000",
+                        "decimals": 6,
+                        "uiAmount": null,
+                        "uiAmountString": "90"
+                    }
+                }]
+            }
+        });
+        let client = tx_client(result);
+        let got = client.get_transaction("Sig", MINT, MERCHANT).unwrap().unwrap();
+        assert!((got.ui_amount - 90.0).abs() < 1e-9);
     }
 
     #[test]

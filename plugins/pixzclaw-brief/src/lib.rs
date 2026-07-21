@@ -15,8 +15,6 @@ mod component {
         features: ["plugins-wit-v0"],
     });
 
-    use std::collections::HashMap;
-
     use serde_json::Value;
     use solana_wasm_core::{HttpTransport, RpcError};
 

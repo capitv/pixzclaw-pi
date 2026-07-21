@@ -91,7 +91,10 @@ mod component {
         fn description() -> String {
             "Check dual-rail (PIX + USDC) invoice settlement status by Solana Pay \
              reference. Queries getSignaturesForAddress for the invoice reference \
-             (derived from invoice_id + merchant_solana when reference is omitted). \
+             (derived from invoice_id + merchant_solana when reference is omitted), \
+             then getTransaction on the latest successful signature to verify the \
+             USDC amount actually received by the merchant (PAID / UNDERPAID / \
+             OVERPAID vs expected_usdc). Emits a shareable receipt when paid. \
              Read-only T0: cannot move funds. PIX is marked paid only when the \
              operator sets pix_marked_paid (bank SPI is not visible on-chain)."
                 .to_string()
@@ -111,7 +114,7 @@ mod component {
                     },
                     "expected_usdc": {
                         "type": "string",
-                        "description": "Optional expected USDC amount note included in the status text."
+                        "description": "Optional expected USDC amount. When set, the received amount is compared against it (PAID when >= 99.5%, UNDERPAID when less, OVERPAID when more). Omit to just report the amount received."
                     },
                     "pix_marked_paid": {
                         "type": "boolean",

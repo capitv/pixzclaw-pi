@@ -35,9 +35,16 @@ impl Default for DashboardSnapshot {
     }
 }
 
+/// Janela "Hoje" = últimas 24h (por simplicidade; rotulado no card).
+const DAY_SECS: i64 = 86_400;
+
 /// Format the Telegram-friendly PixZClaw cash card (~200 tokens).
+///
+/// Layout: caixa unicode (largura útil 35 ≤ 38, mobile-friendly) só para os
+/// saldos; seções "Hoje" / "7 dias" / movimentações em linhas simples (sem
+/// moldura à direita) para não quebrar alinhamento com valores longos.
 pub fn format_dashboard(snap: &DashboardSnapshot) -> String {
-    let merchant_short = short_label(&snap.merchant_solana, 8);
+    let merchant_short = short_label(&snap.merchant_solana, 22);
     let sol = lamports_to_sol_display(snap.sol_lamports);
     let usdc = if snap.usdc_ui.trim().is_empty() {
         "0"
@@ -51,28 +58,42 @@ pub fn format_dashboard(snap: &DashboardSnapshot) -> String {
         .filter(|s| s.is_success())
         .collect();
 
-    let pix_memos: Vec<&&SignatureInfo> = ok_sigs
-        .iter()
-        .filter(|s| {
-            s.memo
-                .as_deref()
-                .map(|m| m.contains("PIX|BRL|"))
-                .unwrap_or(false)
-        })
-        .collect();
+    let pix_memos: Vec<&&SignatureInfo> =
+        ok_sigs.iter().filter(|s| is_pix_memo(s)).collect();
 
     let spark = sparkline_7d(&ok_sigs, snap.now_unix);
-    let activity_7d = count_in_window(&ok_sigs, snap.now_unix, 7 * 86_400);
+    let activity_7d = count_in_window(&ok_sigs, snap.now_unix, 7 * DAY_SECS);
+
+    // --- Fechamento do dia (últimas 24h) ---
+    let today_txs = count_in_window(&ok_sigs, snap.now_unix, DAY_SECS);
+    let today_pix = count_pix_in_window(&ok_sigs, snap.now_unix, DAY_SECS);
+    let today_ids = pix_invoice_ids_in_window(&ok_sigs, snap.now_unix, DAY_SECS, 4);
 
     let mut lines: Vec<String> = Vec::new();
     lines.push("╭─ PixZClaw · Caixa ─────────────────╮".into());
     lines.push(format!("│ Wallet     {merchant_short:<22} │"));
     lines.push(format!("│ USDC       {usdc:<22} │"));
     lines.push(format!("│ SOL (gas)  {sol:<22} │"));
-    lines.push(format!(
-        "│ 7d txs     {activity_7d:<4}  {spark:<16} │"
-    ));
     lines.push("╰───────────────────────────────────╯".into());
+
+    // --- Hoje ---
+    lines.push(String::new());
+    lines.push("Hoje (últimas 24h)".into());
+    lines.push(format!("• txs ok:      {today_txs}"));
+    lines.push(format!("• faturas PIX: {today_pix}"));
+    if today_ids.is_empty() {
+        lines.push("• pagas: —".into());
+    } else {
+        lines.push(format!("• pagas: {}", today_ids.join(", ")));
+    }
+
+    // --- 7 dias ---
+    lines.push(String::new());
+    lines.push("7 dias".into());
+    lines.push(format!("• txs ok: {activity_7d}"));
+    lines.push(format!("• 7d {spark}  (velho→novo)"));
+
+    // --- Movimentações ---
     lines.push(String::new());
     lines.push("Últimas movimentações (on-chain)".into());
 
@@ -83,14 +104,21 @@ pub fn format_dashboard(snap: &DashboardSnapshot) -> String {
             break;
         }
         let when = relative_time(s.block_time, snap.now_unix);
-        let memo = s
-            .memo
-            .as_deref()
-            .map(|m| short_label(m, 28))
-            .unwrap_or_else(|| "—".into());
-        let inv = extract_invoice_id(s.memo.as_deref()).unwrap_or_else(|| "tx".into());
-        let sig_s = short_label(&s.signature, 10);
-        lines.push(format!("• {inv:<12} {memo:<28} {when}  {sig_s}"));
+        // PIX-memo → mostra invoice_id + tag PIX; senão memo curto / sig.
+        let (label, tag) = if is_pix_memo(s) {
+            let inv = extract_invoice_id(s.memo.as_deref())
+                .unwrap_or_else(|| "invoice".into());
+            (inv, "PIX".to_string())
+        } else {
+            let memo = s
+                .memo
+                .as_deref()
+                .filter(|m| !m.trim().is_empty())
+                .map(|m| short_label(m, 14))
+                .unwrap_or_else(|| "tx".into());
+            (memo, short_label(&s.signature, 8))
+        };
+        lines.push(format!("• {label:<14} {when:<7} {tag}"));
         shown += 1;
     }
     if shown == 0 {
@@ -99,13 +127,57 @@ pub fn format_dashboard(snap: &DashboardSnapshot) -> String {
 
     let pix_hits = pix_memos.len();
     lines.push(String::new());
-    lines.push(format!(
-        "Memos PixZClaw (PIX|BRL|…) nas últimas sigs: {pix_hits}"
-    ));
+    lines.push(format!("Memos PixZClaw (PIX|BRL|…) nas sigs: {pix_hits}"));
     lines.push("PIX banco: não visível on-chain — só USDC/SOL aqui.".into());
     lines.push("T0 read-only · sem chave · PixZClaw".into());
 
     lines.join("\n")
+}
+
+/// True when the memo carries a PixZClaw `PIX|BRL|` marker.
+fn is_pix_memo(s: &SignatureInfo) -> bool {
+    s.memo
+        .as_deref()
+        .map(|m| m.contains("PIX|BRL|"))
+        .unwrap_or(false)
+}
+
+/// Count PIX-memo successful txs inside `window_secs` before `now`.
+fn count_pix_in_window(sigs: &[&SignatureInfo], now: i64, window_secs: i64) -> usize {
+    let start = now.saturating_sub(window_secs);
+    sigs.iter()
+        .filter(|s| is_pix_memo(s))
+        .filter(|s| s.block_time.map(|t| t >= start && t <= now).unwrap_or(false))
+        .count()
+}
+
+/// Deduped list of invoice ids paid (PIX-memo) inside the window, capped at `max`.
+fn pix_invoice_ids_in_window(
+    sigs: &[&SignatureInfo],
+    now: i64,
+    window_secs: i64,
+    max: usize,
+) -> Vec<String> {
+    let start = now.saturating_sub(window_secs);
+    let mut out: Vec<String> = Vec::new();
+    for s in sigs {
+        if out.len() >= max {
+            break;
+        }
+        let in_window = s
+            .block_time
+            .map(|t| t >= start && t <= now)
+            .unwrap_or(false);
+        if !in_window {
+            continue;
+        }
+        if let Some(id) = extract_invoice_id(s.memo.as_deref()) {
+            if !out.contains(&id) {
+                out.push(id);
+            }
+        }
+    }
+    out
 }
 
 fn lamports_to_sol_display(lamports: u64) -> String {
@@ -176,12 +248,12 @@ fn relative_time(block_time: Option<i64>, now: i64) -> String {
         return "agora".into();
     }
     if d < 3600 {
-        return format!("{}m", d / 60);
+        return format!("há {}m", d / 60);
     }
     if d < 86_400 {
-        return format!("{}h", d / 3600);
+        return format!("há {}h", d / 3600);
     }
-    format!("{}d", d / 86_400)
+    format!("há {}d", d / 86_400)
 }
 
 /// Default USDC mint used when config omits it.
@@ -260,5 +332,59 @@ mod tests {
         );
         assert!(extract_invoice_id(Some("nope")).is_none());
         let _ = json!({});
+    }
+
+    #[test]
+    fn today_window_counts_24h_only() {
+        let now = 1_700_000_000i64;
+        let sigs = vec![
+            sig("A", Some("PIX|BRL|hoje-1|x"), now - 3_600), // 1h atrás → dentro
+            sig("B", Some("PIX|BRL|hoje-2|x"), now - 80_000), // ~22h → dentro
+            sig("C", Some("PIX|BRL|velha|x"), now - 90_000),  // 25h → fora
+            sig("D", None, now - 100),                         // tx não-PIX, dentro
+        ];
+        let refs: Vec<&SignatureInfo> = sigs.iter().collect();
+        assert_eq!(count_in_window(&refs, now, DAY_SECS), 3); // A,B,D
+        assert_eq!(count_pix_in_window(&refs, now, DAY_SECS), 2); // A,B
+        let ids = pix_invoice_ids_in_window(&refs, now, DAY_SECS, 4);
+        assert_eq!(ids, vec!["hoje-1".to_string(), "hoje-2".to_string()]);
+    }
+
+    #[test]
+    fn today_ids_dedup_and_capped() {
+        let now = 1_700_000_000i64;
+        let sigs = vec![
+            sig("A", Some("PIX|BRL|dup|x"), now - 10),
+            sig("B", Some("PIX|BRL|dup|y"), now - 20),
+            sig("C", Some("PIX|BRL|two|z"), now - 30),
+        ];
+        let refs: Vec<&SignatureInfo> = sigs.iter().collect();
+        let ids = pix_invoice_ids_in_window(&refs, now, DAY_SECS, 4);
+        assert_eq!(ids, vec!["dup".to_string(), "two".to_string()]);
+        let capped = pix_invoice_ids_in_window(&refs, now, DAY_SECS, 1);
+        assert_eq!(capped.len(), 1);
+    }
+
+    #[test]
+    fn card_has_today_and_legend_sections() {
+        let now = 1_700_000_000i64;
+        let snap = DashboardSnapshot {
+            merchant_solana: "11111111111111111111111111111112".into(),
+            sol_lamports: 410_000_000,
+            usdc_ui: "142.5".into(),
+            signatures: vec![
+                sig("VeryLongSigAAAAAAAA", Some("PIX|BRL|demo-1|cafe"), now - 120),
+                sig("VeryLongSigBBBBBBBB", Some("PIX|BRL|inv-412|x"), now - 3_600),
+            ],
+            now_unix: now,
+            recent_limit: 5,
+        };
+        let s = format_dashboard(&snap);
+        assert!(s.contains("Hoje (últimas 24h)"));
+        assert!(s.contains("faturas PIX:"));
+        assert!(s.contains("pagas: demo-1"));
+        assert!(s.contains("(velho→novo)"));
+        assert!(s.contains("há 1h")); // relative time prefix
+        assert!(s.contains("PIX")); // movement tag
     }
 }

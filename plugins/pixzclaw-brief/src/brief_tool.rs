@@ -188,6 +188,33 @@ mod unit {
     }
 
     #[test]
+    fn brief_has_daily_closeout_sections() {
+        let now = 1_700_000_000i64;
+        let snap = DashboardSnapshot {
+            merchant_solana: "11111111111111111111111111111112".into(),
+            sol_lamports: 500_000_000,
+            usdc_ui: "10".into(),
+            signatures: vec![
+                fixture_sig("SigA", Some("PIX|BRL|inv-1|cafe"), now - 120),
+                fixture_sig("SigB", Some("PIX|BRL|inv-2|x"), now - 3_600),
+                // Fora da janela de 24h: não deve contar em "Hoje".
+                fixture_sig("SigOld", Some("PIX|BRL|velha|x"), now - 3 * 86_400),
+            ],
+            now_unix: now,
+            recent_limit: 5,
+        };
+        let s = evaluate_brief(&snap);
+        // Fechamento de caixa diário.
+        assert!(s.contains("Hoje (últimas 24h)"), "faltou seção Hoje:\n{s}");
+        assert!(s.contains("faturas PIX:"));
+        assert!(s.contains("pagas: inv-1"));
+        // Legenda da sparkline 7d.
+        assert!(s.contains("(velho→novo)"));
+        // Hora relativa com prefixo "há".
+        assert!(s.contains("há 1h"));
+    }
+
+    #[test]
     fn config_requires_merchant_on_fetch() {
         let cfg = BriefConfig::default();
         struct Boom;

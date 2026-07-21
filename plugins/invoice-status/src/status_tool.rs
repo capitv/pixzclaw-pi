@@ -9,7 +9,8 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 use solana_wasm_core::{
-    derive_reference, status_from_signatures, HttpTransport, RpcClient, SignatureInfo, USDC_MINT,
+    derive_reference, status_from_signatures, status_from_signatures_verified, HttpTransport,
+    RpcClient, SignatureInfo, UsdcReceipt, USDC_MINT,
 };
 
 /// Default Solana mainnet public RPC (operator should override in production).
@@ -17,6 +18,11 @@ pub const DEFAULT_RPC_URL: &str = "https://api.mainnet-beta.solana.com";
 
 /// Default `getSignaturesForAddress` lookback when the tool call omits it.
 pub const DEFAULT_LOOKBACK: u64 = 25;
+
+/// Upper bound of `getTransaction` value checks per status call. Partial
+/// payments across several transfers are summed up to this many recent
+/// successful signatures.
+pub const MAX_VALUE_CHECKS: usize = 5;
 
 /// Plugin config resolved from the host-injected `__config` section.
 #[derive(Debug, Clone)]
@@ -148,7 +154,49 @@ pub fn evaluate_status(
     )
 }
 
-/// Fetch signatures for the invoice reference over `http`, then evaluate status.
+/// Pure verified path for tests: given signatures and an already-resolved
+/// [`UsdcReceipt`] (from `getTransaction`), produce the value-aware status.
+///
+/// `verified == None` means the amount could not be confirmed (RPC didn't
+/// return the transaction), which degrades honestly to `USDC: SIG OK` — never
+/// to PAID.
+pub fn evaluate_status_verified(
+    req: &StatusRequest,
+    cfg: &StatusConfig,
+    sigs: &[SignatureInfo],
+    verified: Option<UsdcReceipt>,
+) -> String {
+    let reference = match resolve_reference(
+        &req.invoice_id,
+        req.reference.as_deref(),
+        &cfg.merchant_solana,
+    ) {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
+
+    status_from_signatures_verified(
+        &req.invoice_id,
+        &reference,
+        sigs,
+        verified,
+        req.expected_usdc.as_deref(),
+        req.pix_marked_paid,
+    )
+}
+
+/// Fetch signatures for the invoice reference over `http`, then verify the
+/// amount actually received by the merchant and evaluate status.
+///
+/// Flow: `getSignaturesForAddress(reference)` → up to [`MAX_VALUE_CHECKS`]
+/// recent successful sigs → `getTransaction(sig)` each → sum of net USDC
+/// received by `merchant_solana` for `usdc_mint` → value-aware verdict +
+/// shareable receipt when paid. Summing covers invoices settled by multiple
+/// partial transfers and spam txs touching the reference.
+///
+/// If the merchant pubkey is unknown, or `getTransaction` fails / omits the
+/// transaction, the amount cannot be confirmed and the status degrades to
+/// `USDC: SIG OK (valor não verificado …)` — it is never reported as PAID.
 pub fn fetch_and_status<T: HttpTransport>(
     req: &StatusRequest,
     cfg: &StatusConfig,
@@ -169,9 +217,62 @@ pub fn fetch_and_status<T: HttpTransport>(
         .get_signatures_for_address(&reference, req.effective_lookback())
         .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?;
 
-    // Reference is already validated; evaluate via pure path with a request
-    // that still carries the original fields for expected_usdc / pix flags.
-    Ok(evaluate_status(req, cfg, &sigs))
+    // Sum the verified value over the most recent successful signatures
+    // (newest first). A single invoice can be settled across multiple partial
+    // transfers, and spam txs touching the reference must not mask an older
+    // real payment — so one tx is not enough. RPC cost is bounded by
+    // MAX_VALUE_CHECKS.
+    let merchant = cfg.merchant_solana.trim();
+
+    let mut received_sum = 0.0_f64;
+    let mut any_verified = false;
+    let mut block_time: Option<i64> = None;
+
+    // Need the merchant pubkey to filter received balances; without it the
+    // amount cannot be verified, so degrade honestly rather than guess.
+    if !merchant.is_empty() {
+        for sig in sigs
+            .iter()
+            .filter(|s| s.is_success())
+            .take(MAX_VALUE_CHECKS)
+        {
+            match client.get_transaction(&sig.signature, cfg.usdc_mint.trim(), merchant) {
+                Ok(Some(r)) => {
+                    any_verified = true;
+                    // Only positive deltas count as received; an unrelated
+                    // outgoing transfer in a tx touching the reference must
+                    // not subtract from the settlement sum.
+                    if r.ui_amount > 0.0 {
+                        received_sum += r.ui_amount;
+                    }
+                    if block_time.is_none() {
+                        block_time = r.block_time.or(sig.block_time);
+                    }
+                }
+                // tx not found / no meta / RPC error → this tx unverifiable;
+                // older verified txs still yield an honest lower bound.
+                Ok(None) | Err(_) => {}
+            }
+        }
+    }
+
+    let verified = if any_verified {
+        Some(UsdcReceipt {
+            received_ui: received_sum,
+            block_time,
+        })
+    } else {
+        None
+    };
+
+    Ok(status_from_signatures_verified(
+        &req.invoice_id,
+        &reference,
+        &sigs,
+        verified,
+        req.expected_usdc.as_deref(),
+        req.pix_marked_paid,
+    ))
 }
 
 /// Build a successful fixture signature for host unit tests.
