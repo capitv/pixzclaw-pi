@@ -53,7 +53,9 @@ Marca comercial do pacote de plugins:
 | ONBOARDING.md | https://github.com/capitv/pixzclaw-pi/blob/main/ONBOARDING.md |
 | PI_INSTALL.md | https://github.com/capitv/pixzclaw-pi/blob/main/PI_INSTALL.md |
 | CI workflow (fonte) | https://github.com/capitv/pixzclaw-pi/blob/main/ci/build-pi.yml |
-| Release **v0.4.0** (valor verificado + recibo + caixa) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.4.0-plugins |
+| Release **v0.5.0** (lembrete cron) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.0-plugins |
+| Landing page (GitHub Pages) | https://capitv.github.io/pixzclaw-pi/ |
+| Release v0.4.0 (valor verificado + recibo + caixa) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.4.0-plugins |
 | Release v0.3.0 (fatura + QR) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.3.0-plugins |
 | Release v0.2.1 (brief + skills) | https://github.com/capitv/pixzclaw-pi/releases/tag/v0.2.1-plugins |
 | Artifact Actions (binário aarch64) | via Actions run do repo (login); não é URL pública estável |
@@ -146,6 +148,27 @@ Memo: `PIX|BRL|<invoice_id>|<short>`
     - brl-usdc-invoice: card novo — PIX em code block (tap-to-copy),
       bloco "Encaminhe ao cliente", cotação no rodapé; USDC **QR-only**.
     - 92 testes host. Feito por times Opus A/B + validação Fable.
+
+11. **v0.5.0** (2026-07-21, release `v0.5.0-plugins`, plugins @ 0.3.0):
+    lembrete automático via **cron nativo do ZeroClaw** (`cron_add`).
+    Fatura oferece CTA "avisa quando a X pagar" (config `watch_hint`);
+    `invoice_status` emite `[sistema] Fatura liquidada … cron_remove`
+    quando confirma valor; skill `pixzclaw-watch` monta o job
+    (`job_type: agent`, `every_ms`, `allowed_tools: [invoice_status,
+    cron_remove]`, `delivery` telegram). Silêncio em PENDING;
+    UNDERPAID avisa e encerra (sessão cron é isolada, sem memória).
+    101 testes host.
+
+**⚠️ BLOQUEIO do PR upstream (descoberto 2026-07-21):**
+`tools/ci/validate_components.sh` do repo upstream copia **apenas**
+`plugins/<nome>/` + `wit/v0` para um snapshot temporário e builda lá.
+Nossa path dep `solana-wasm-core = { path = "../../crates/..." }`
+**não existe** nesse snapshot → build falha no CI.
+Fix obrigatório antes do PR: vendorizar o core em
+`plugins/<nome>/vendor/solana-wasm-core/` nos 3 plugins e apontar a path
+dep para lá (manter `crates/` como fonte única + script de sync).
+Evidência de que é o padrão aceito: PR #116 (concorrente) usa
+`plugins/<nome>/vendor/zeroclaw-solana-core/`.
 
 **⚠️ Lição v0.3.1/0.3.2 (não regredir):** o host ZeroClaw redacta base58 de
 alta entropia no chat SEMPRE (não é o plugin redact-text; instrução não
