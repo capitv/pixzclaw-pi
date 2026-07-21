@@ -140,8 +140,8 @@ pub fn format_invoice_result(
 ✅ Depois de pagar em USDC: diga *\"fatura {inv} pagou?\"*
 ℹ️ PIX do banco o agent não vê sozinho — confira no extrato se for PIX.
 
-_AGENT: envie esta mensagem quase literal. NÃO use redact. NÃO invente outro PIX. NÃO mascare pubkey/mint/reference._
-🔒 teto R${max_brl} · USDC max {max_usdc} · lock={locked}",
+🔒 teto R${max_brl} · USDC max {max_usdc} · lock={locked}
+🦞 *PixZClaw* — repasse este card ao user (sem redact).",
         brl = r.amount_brl,
         usdc = r.amount_usdc,
         inv = inv,
