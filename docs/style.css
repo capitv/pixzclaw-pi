@@ -2,21 +2,31 @@
    PixZClaw — dual-rail landing page
    Aesthetic: technical documentation editorial / engineering zine.
 
-   COLOUR SYSTEM — every colour denotes one actor, and only that actor.
+   COLOUR SYSTEM — one blue family, one gradient, one warning.
+   The rule the page can defend in prose: THE RAIL A MACHINE CAN VERIFY IS THE
+   ONE THAT GETS COLOUR. Everything else is the same blue or no colour at all.
    The page documents this legend to the reader (see .clegend, section 01).
 
-     coral  #FF5A3C  --accent  PixZClaw itself: the mark, the CTAs, our claims
-     cyan   #22d3ee  --zc      ZeroClaw, the host runtime: agent, cron, wasm
-     teal   #32BCAD  --pix     the PIX rail (official PIX brand colour)
-     grad   #9945FF → #14F195  --sol-a/--sol-b  the Solana rail
-     amber  #F5A623  --amber   a warning STATE, never an actor
-
-   Cyan is used sparingly and on purpose: it fights coral if spread around.
+     blue   #3B9EFF  --accent  PixZClaw itself: the mark, the CTAs, our claims
+     sky    #7DD3FC  --zc      ZeroClaw, the host runtime: agent, cron, wasm
+                               — a lighter tint of the SAME hue, not a rival
+     slate  #94A3B8  --pix     the PIX rail, deliberately drained of colour:
+                               no software on this page can confirm that rail,
+                               so it does not get to look confirmed. AA-safe
+                               (7.5:1 on --bg, 6.8:1 on --surface).
+     grad   #9945FF → #14F195  --sol-a/--sol-b  Solana, and ONLY Solana.
+                               The page's single moment of colour, and it is
+                               the sponsor chain's real brand asset. It never
+                               appears as decoration — no ambient purple, no
+                               purple section rules.
+     amber  #F5A623  --amber   a warning STATE, never an actor (UNDERPAID, and
+                               the private-key callout, which is the same
+                               state wearing a different label)
 
    RECURRING DETAIL — the "double rail": two stacked hairlines, the upper one
-   PIX teal, the lower one the Solana gradient, both fading out to the right.
+   the neutral PIX slate, the lower one our blue, both fading out to the right.
    It is the mark's two pincers flattened into a rule, and it marks every
-   section head and every section kicker. See .railpair.
+   section head and every section kicker.
    ========================================================================== */
 
 :root {
@@ -28,13 +38,14 @@
   --rule: #182130;
   --rule-soft: rgba(232, 236, 241, 0.07);
 
-  --accent: #FF5A3C;
-  --accent-soft: rgba(255, 90, 60, 0.12);
-  --zc: #22d3ee;
-  --zc-light: #67e8f9;
-  --zc-soft: rgba(34, 211, 238, 0.1);
-  --pix: #32BCAD;
-  --pix-soft: rgba(50, 188, 173, 0.12);
+  --accent: #3B9EFF;
+  --accent-soft: rgba(59, 158, 255, 0.12);
+  --accent-hi: #6DB6FF;                     /* hover/pressed tint of --accent */
+  --zc: #7DD3FC;
+  --zc-light: #BAE6FD;
+  --zc-soft: rgba(125, 211, 252, 0.10);
+  --pix: #94A3B8;
+  --pix-soft: rgba(148, 163, 184, 0.12);
   --sol-a: #9945FF;
   --sol-b: #14F195;
 
@@ -56,9 +67,9 @@
 
   /* --- glass, derived from OUR palette -------------------------------------
      The reference this was ported from stacked pure white on zinc-950. Pure
-     white glass fights coral, so the tint here is --text (#E8ECF1) at a very
-     low alpha over our own #0B0E14: it lifts the surface without introducing
-     a fifth colour. --glass-solid is the no-backdrop-filter fallback and is
+     white glass goes cold against our blue, so the tint here is --text
+     (#E8ECF1) at a very low alpha over our own #0B0E14: it lifts the surface
+     without introducing another hue. --glass-solid is the no-backdrop-filter fallback and is
      the *default* value; the blur is layered on top inside @supports.
      Glass is used in exactly two places: the two hero badges and the proof
      band. Everything else on this page stays flat and editorial on purpose. */
@@ -83,6 +94,14 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+/* `overflow-x: hidden` on <body> propagates to the viewport (html is visible),
+   so body itself stays a non-scroll-container and position:sticky survives.
+   Where `clip` exists that is guaranteed rather than inferred — clip never
+   creates a scroll container, so the pinned flow stage in section 01 cannot
+   be broken by this line. */
+@supports (overflow: clip) {
+  body { overflow-x: clip; }
 }
 
 /* --- grain: the page should not read as flat paint --- */
@@ -139,8 +158,8 @@ code {
 
 /* ==========================================================================
    The double rail — the page's recurring typographic detail.
-   Two hairlines: PIX teal above, the Solana gradient below, both running out
-   to the right. Applied at .kicker__rule (small), .sec-head::before and
+   Two hairlines: the neutral PIX slate above, our blue below, both running
+   out to the right. Applied at .kicker__rule (small), .sec-head::before and
    .rem::before (full width) and .footer__fx::before (page close).
    ========================================================================== */
 
@@ -304,7 +323,7 @@ code {
 }
 .btn:hover { text-decoration: none; }
 .btn--primary { background: var(--accent); color: #0B0E14; }
-.btn--primary:hover { background: #ff7057; transform: translateY(-1px); }
+.btn--primary:hover { background: var(--accent-hi); transform: translateY(-1px); }
 .btn--ghost { border-color: var(--border); color: var(--text); background: rgba(255,255,255,0.015); }
 .btn--ghost:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
 
@@ -331,13 +350,13 @@ code {
 .hrail--pix {
   stroke: var(--pix);
   stroke-dasharray: 5 9;
-  filter: drop-shadow(0 0 5px rgba(50,188,173,0.3));
+  filter: drop-shadow(0 0 5px rgba(148,163,184,0.28));
   animation: railflow 14s linear infinite;
 }
 .hrail--sol {
   stroke: url(#solgrad);
   stroke-dasharray: 5 9;
-  filter: drop-shadow(0 0 5px rgba(153,69,255,0.3));
+  filter: drop-shadow(0 0 5px rgba(20,241,149,0.26));
   animation: railflow 18s linear infinite reverse;
 }
 @keyframes railflow { to { stroke-dashoffset: -140; } }
@@ -484,8 +503,8 @@ code {
   flex-direction: column;
   gap: 0.6rem;
   background:
-    radial-gradient(120% 60% at 12% 0%, rgba(255,90,60,0.05), transparent 60%),
-    radial-gradient(120% 70% at 90% 100%, rgba(50,188,173,0.06), transparent 60%),
+    radial-gradient(120% 60% at 12% 0%, rgba(59,158,255,0.06), transparent 60%),
+    radial-gradient(120% 70% at 90% 100%, rgba(148,163,184,0.05), transparent 60%),
     var(--bg);
 }
 
@@ -553,7 +572,7 @@ code {
   border: 1px solid transparent;
   white-space: nowrap;
 }
-.railrow--pix .railrow__chip { border-color: rgba(50,188,173,0.55); color: var(--pix); background: var(--pix-soft); }
+.railrow--pix .railrow__chip { border-color: rgba(148,163,184,0.55); color: var(--pix); background: var(--pix-soft); }
 .railrow--sol .railrow__chip {
   background: linear-gradient(#141F2C, #141F2C) padding-box,
               linear-gradient(90deg, var(--sol-a), var(--sol-b)) border-box;
@@ -581,7 +600,7 @@ code {
   font-size: 0.73rem;
   text-align: center;
   color: var(--accent);
-  border: 1px solid rgba(255,90,60,0.4);
+  border: 1px solid rgba(59,158,255,0.4);
   background: var(--accent-soft);
   border-radius: 6px;
   padding: 0.45em 0.5em;
@@ -632,8 +651,8 @@ code {
    double inset ring, machined side buttons, Dynamic Island, diagonal screen
    glare and the home bar. The hardware is deliberately neutral metal — it is
    an object, not an actor, so it takes no colour from the legend. The one
-   coloured pixel on it is the island's live dot, and that is coral because
-   coral means PixZClaw and PixZClaw is what is running.
+   coloured pixel on it is the island's live dot, and that is blue because
+   blue means PixZClaw and PixZClaw is what is running.
    ========================================================================== */
 
 .stage {
@@ -641,16 +660,17 @@ code {
   --device-w: min(100%, clamp(240px, 84vw, 336px));
 }
 
-/* atmosphere behind the phone: our coral, plus a whisper of host cyan.
-   No generic purple bloom — the purple in this page belongs to Solana only. */
+/* atmosphere behind the phone: our blue, plus a whisper of the lighter host
+   tint. No purple bloom anywhere — purple on this page belongs to Solana,
+   and Solana never shows up as wallpaper. */
 .stage__glow {
   position: absolute;
   inset: -8% -6% -4%;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(38% 30% at 26% 18%, rgba(255, 90, 60, 0.16), transparent 70%),
-    radial-gradient(40% 34% at 78% 82%, rgba(34, 211, 238, 0.10), transparent 72%);
+    radial-gradient(38% 30% at 26% 18%, rgba(59, 158, 255, 0.17), transparent 70%),
+    radial-gradient(40% 34% at 78% 82%, rgba(125, 211, 252, 0.09), transparent 72%);
   filter: blur(34px);
 }
 
@@ -728,12 +748,12 @@ code {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);   /* coral = PixZClaw is the thing that is live */
+  background: var(--accent);   /* blue = PixZClaw is the thing that is live */
   animation: livepulse 2.6s ease-out infinite;
 }
 @keyframes livepulse {
-  0%        { box-shadow: 0 0 0 0 rgba(255, 90, 60, 0.5); }
-  70%, 100% { box-shadow: 0 0 0 6px rgba(255, 90, 60, 0); }
+  0%        { box-shadow: 0 0 0 0 rgba(59, 158, 255, 0.5); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(59, 158, 255, 0); }
 }
 
 .device__glare {
@@ -906,7 +926,7 @@ code {
 .proof {
   border-bottom: 1px solid var(--rule);
   background:
-    linear-gradient(90deg, rgba(50,188,173,0.05), transparent 45%, rgba(153,69,255,0.05));
+    linear-gradient(90deg, rgba(59,158,255,0.06), transparent 45%, rgba(59,158,255,0.04));
   padding: clamp(1.8rem, 4vw, 2.8rem) 0 1.6rem;
 }
 /* the one raised surface in the document body: the four verifiable claims sit
@@ -926,7 +946,7 @@ code {
   border: 1px solid var(--glass-brd);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
 }
-/* the diffuse corner glow — coral, at the lowest alpha that still registers */
+/* the diffuse corner glow — our blue, at the lowest alpha that still registers */
 .proof__list::before {
   content: "";
   position: absolute;
@@ -936,7 +956,7 @@ code {
   width: 260px;
   height: 260px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 90, 60, 0.17), transparent);
+  background: radial-gradient(closest-side, rgba(59, 158, 255, 0.16), transparent);
   filter: blur(30px);
   pointer-events: none;
 }
@@ -1028,7 +1048,7 @@ code {
   width: 2.4rem;
   flex-shrink: 0;
   align-self: center;
-  background-image: linear-gradient(90deg, var(--pix), rgba(50, 188, 173, 0));
+  background-image: linear-gradient(90deg, var(--pix), rgba(148, 163, 184, 0));
   background-size: 100% 1px;
   background-position: 0 0;
   background-repeat: no-repeat;
@@ -1039,7 +1059,7 @@ code {
   display: block;
   height: 1px;
   margin-top: 3px;
-  background-image: linear-gradient(90deg, var(--sol-a), var(--sol-b) 55%, rgba(20, 241, 149, 0));
+  background-image: linear-gradient(90deg, var(--accent), rgba(59, 158, 255, 0) 92%);
 }
 
 .sec-head {
@@ -1059,8 +1079,8 @@ code {
   right: 0;
   height: 5px;
   background-image:
-    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
-    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+    linear-gradient(90deg, var(--pix) 0, rgba(148, 163, 184, 0.12) 62%, rgba(148, 163, 184, 0) 100%),
+    linear-gradient(90deg, var(--accent) 0, rgba(59, 158, 255, 0.35) 38%, rgba(59, 158, 255, 0) 100%);
   background-size: 100% 1px, 100% 1px;
   background-position: 0 0, 0 4px;
   background-repeat: no-repeat;
@@ -1074,7 +1094,57 @@ code {
 
 /* ============================== 01 — diagram ============================== */
 
+/* --------------------------------------------------------------------------
+   The pinned flow stage.
+
+   `.pin` is nothing but scroll travel. `.pin__stage` is what the reader looks
+   at: it sticks to the top of the viewport and centres the headline, the lead
+   and the diagram, so the claim is still on screen while the rails draw
+   themselves underneath it.
+
+   BOTH the tall height and the sticky are gated behind `.js-pin`, a class
+   script.js adds only after it has decided to run the effect (JS present,
+   motion allowed, viewport ≥ 1020px). Without that class this is an ordinary
+   block: no 300vh void, no dead scroll, diagram complete. That is also the
+   state under prefers-reduced-motion and on phones, and the media queries
+   backing it are live — script.js re-evaluates on change, without a reload.
+
+   Nothing between `.pin__stage` and the viewport may clip: `.section` is
+   position:relative only, `.wrap` has no overflow, and <body>'s overflow-x is
+   switched to `clip` where supported (see the top of this file). Scroll is
+   never intercepted — no wheel or touch handler exists. It is a pin, not a
+   hijack.
+   -------------------------------------------------------------------------- */
+
+.pin { position: relative; }
+.pin__stage { position: relative; }
+
+.js-pin .pin { height: 320vh; }
+.js-pin .pin__stage {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4.6rem 0 3rem;
+}
+/* align-items:center would otherwise shrink-to-fit the measure column */
+.js-pin .pin__stage > .wrap { width: 100%; }
+/* short laptop screens: give the stage its height back from the padding */
+@media (max-height: 760px) {
+  .js-pin .pin__stage { padding: 3.4rem 0 1.8rem; }
+  .js-pin .pin__stage .sec-head { margin-bottom: 1.8rem; }
+}
+/* the pin only ever engages at >=1020px (script.js explains the number), so
+   this is the narrowest band that can ever see it: shorten the travel there */
+@media (max-width: 1180px) {
+  .js-pin .pin { height: 300vh; }
+}
+
 .diagram { margin: 0 0 3rem; }
+.js-pin .pin__stage .diagram { margin-bottom: 0; }
 .diagram__scroll {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1093,10 +1163,10 @@ code {
   height: auto;
 }
 .dg-box { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
-.dg-box--src { fill: #17202E; stroke: rgba(255,90,60,0.5); }
-.dg-box--pix { stroke: rgba(50,188,173,0.45); }
+.dg-box--src { fill: #17202E; stroke: rgba(59,158,255,0.5); }
+.dg-box--pix { stroke: rgba(148,163,184,0.45); }
 .dg-box--sol { stroke: rgba(20,241,149,0.4); }
-.dg-box--ghost { fill: transparent; stroke: rgba(50,188,173,0.35); stroke-dasharray: 4 4; }
+.dg-box--ghost { fill: transparent; stroke: rgba(148,163,184,0.35); stroke-dasharray: 4 4; }
 .dg-box--out { fill: #17202E; stroke: rgba(20,241,149,0.55); }
 
 .dg-t { font-family: var(--font-mono); font-size: 12.5px; fill: var(--text); }
@@ -1168,16 +1238,42 @@ code {
   fill: var(--text-dim);
   transition: fill 0.45s ease, opacity 0.45s ease;
 }
-.dg-pill--brand rect { stroke: rgba(255, 90, 60, 0.45); }
-.dg-pill--pix   rect { stroke: rgba(50, 188, 173, 0.45); }
+.dg-pill--brand rect { stroke: rgba(59, 158, 255, 0.45); }
+.dg-pill--pix   rect { stroke: rgba(148, 163, 184, 0.45); }
 .dg-pill--sol   rect { stroke: rgba(20, 241, 149, 0.4); }
 .dg-pill--out   rect { stroke: rgba(20, 241, 149, 0.55); }
 /* the operator pill echoes its ghost box: dashed, because it is not automatic */
-.dg-pill--ghost rect { stroke: rgba(50, 188, 173, 0.32); stroke-dasharray: 3 3; }
+.dg-pill--ghost rect { stroke: rgba(148, 163, 184, 0.32); stroke-dasharray: 3 3; }
 
-/* the not-yet-reached state. Applied by script.js only — never in the markup. */
+/* ---- pill entrance ----
+   A pill does not brighten on arrival, it ARRIVES: it fades up and settles
+   the moment its own connector lands, staggered by nothing more than each
+   pill's own data-lit threshold. `transform-box: fill-box` makes the
+   transform local to the group, so the 6-unit lift and the 4% scale read the
+   same wherever the pill sits inside the 1090-wide viewBox — without it the
+   origin would be the SVG's own corner and the pills would swing.
+
+   `.is-dim` is the un-entered state and is applied by script.js only, never
+   in the markup: with no JS every pill ships already arrived. Under
+   prefers-reduced-motion the script never applies it at all, and the global
+   motion query below collapses the duration anyway. */
+.dg-pill {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 0.7, 0.25, 1),
+    transform 0.5s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+.dg-pill.is-dim {
+  opacity: 0;
+  transform: translateY(6px) scale(0.96);
+}
+/* the ghost pill keeps its dashed stroke through every state — the dash is
+   the point, not a decoration, so only the colour is neutralised on the way in */
 .dg-pill.is-dim rect { stroke: var(--rule); fill: transparent; }
-.dg-pill.is-dim text { fill: var(--text-faint); opacity: 0.45; }
+.dg-pill.is-dim text { fill: var(--text-faint); }
 
 .scroll-hint {
   display: none;
@@ -1313,7 +1409,7 @@ code {
   grid-template-columns: minmax(0, 1fr);
   gap: 1.6rem;
   margin-bottom: 1.2rem;
-  border-color: rgba(255,90,60,0.28);
+  border-color: rgba(59,158,255,0.28);
   padding: clamp(1.4rem, 3vw, 2.2rem);
 }
 @media (min-width: 900px) {
@@ -1404,8 +1500,8 @@ code {
 .vd--paid b { color: var(--sol-b); }
 .vd--under { border-left-color: var(--amber); }
 .vd--under b { color: var(--amber); }
-.vd--over { border-left-color: var(--sol-a); }
-.vd--over b { color: #B98CFF; }
+.vd--over { border-left-color: var(--accent); }
+.vd--over b { color: var(--accent); }
 
 .out-label {
   font-family: var(--font-mono);
@@ -1452,8 +1548,8 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   right: 0;
   height: 5px;
   background-image:
-    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
-    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+    linear-gradient(90deg, var(--pix) 0, rgba(148, 163, 184, 0.12) 62%, rgba(148, 163, 184, 0) 100%),
+    linear-gradient(90deg, var(--accent) 0, rgba(59, 158, 255, 0.35) 38%, rgba(59, 158, 255, 0) 100%);
   background-size: 100% 1px, 100% 1px;
   background-position: 0 0, 0 4px;
   background-repeat: no-repeat;
@@ -1471,7 +1567,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--zc);
-  border: 1px solid rgba(34, 211, 238, 0.4);
+  border: 1px solid rgba(125, 211, 252, 0.4);
   background: var(--zc-soft);
   border-radius: 999px;
   padding: 0.3em 0.75em;
@@ -1481,7 +1577,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   font-family: var(--font-mono);
   font-size: 0.9rem;
   color: var(--accent);
-  border: 1px dashed rgba(255,90,60,0.45);
+  border: 1px dashed rgba(59,158,255,0.45);
   background: var(--accent-soft);
   border-radius: 7px;
   padding: 0.7em 0.9em;
@@ -1496,7 +1592,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 }
 .rem__silence strong { color: var(--accent); }
 
-/* the timeline IS the cron job: cyan until the on-chain check lands (green) */
+/* the timeline IS the cron job: host blue until the on-chain check lands (green) */
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .timeline::before {
   content: "";
@@ -1559,7 +1655,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   font-family: var(--font-mono);
   font-size: 0.95rem;
   color: var(--accent);
-  border: 1px solid rgba(255,90,60,0.35);
+  border: 1px solid rgba(59,158,255,0.35);
   border-radius: 4px;
   width: 1.7rem; height: 1.7rem;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1617,7 +1713,7 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   border-bottom: 1px solid var(--rule);
   padding: clamp(3rem, 7vw, 5.5rem) 0;
   background:
-    radial-gradient(70% 120% at 14% 50%, rgba(255, 90, 60, 0.055), transparent 62%),
+    radial-gradient(70% 120% at 14% 50%, rgba(59, 158, 255, 0.055), transparent 62%),
     var(--bg-2);
 }
 .thesis__grid {
@@ -1777,6 +1873,9 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
 /* the release tag inside the install command is injected from one constant in script.js */
 [data-version-tag] { color: var(--zc); }
 
+/* the second and last use of amber on this page. Amber is never an actor —
+   it is the warning STATE, and this callout is the same state as UNDERPAID
+   wearing a different label: "you are about to paste the wrong kind of key". */
 .callout {
   display: flex;
   gap: 0.7rem;
@@ -1896,8 +1995,8 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   right: 0;
   height: 5px;
   background-image:
-    linear-gradient(90deg, var(--pix) 0, rgba(50, 188, 173, 0.12) 62%, rgba(50, 188, 173, 0) 100%),
-    linear-gradient(90deg, var(--sol-a) 0, var(--sol-b) 38%, rgba(20, 241, 149, 0) 100%);
+    linear-gradient(90deg, var(--pix) 0, rgba(148, 163, 184, 0.12) 62%, rgba(148, 163, 184, 0) 100%),
+    linear-gradient(90deg, var(--accent) 0, rgba(59, 158, 255, 0.35) 38%, rgba(59, 158, 255, 0) 100%);
   background-size: 100% 1px, 100% 1px;
   background-position: 0 0, 0 4px;
   background-repeat: no-repeat;

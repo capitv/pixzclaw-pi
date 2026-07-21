@@ -159,7 +159,15 @@ Memo: `PIX|BRL|<invoice_id>|<short>`
     UNDERPAID avisa e encerra (sessão cron é isolada, sem memória).
     101 testes host.
 
-**⚠️ BLOQUEIO do PR upstream (descoberto 2026-07-21):**
+**✅ PR upstream ABERTO (2026-07-21): [#123](https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123)**
+`feat(plugins): PixZClaw — dual-rail BRL PIX + Solana Pay USDC invoicing (T0/T1)`
+branch `feat/pixzclaw-dual-rail-brl-usdc`, state OPEN, não-draft.
+CI em `action_required` (gate de first-time contributor — atinge os 125 PRs
+do bounty, não é defeito nosso). Nenhum maintainer revisou nenhum PR do
+bounty ainda, o que ativa a cláusula do edital: fork limpo é aceito para
+julgamento.
+
+**Histórico — bloqueio que foi resolvido antes do PR:**
 `tools/ci/validate_components.sh` do repo upstream copia **apenas**
 `plugins/<nome>/` + `wit/v0` para um snapshot temporário e builda lá.
 Nossa path dep `solana-wasm-core = { path = "../../crates/..." }`
@@ -184,9 +192,8 @@ sobrevive (não é base58).
 5. Bot Telegram “aba” separada (agent/canal dedicado) — **documentado, não implementado na config do user**  
 
 ### Não feito ❌
-1. PR formal em `zeroclaw-labs/zeroclaw-plugins`  
-2. Vídeo demo ≤3 min Superteam  
-3. Submit Superteam Earn  
+1. Vídeo demo ≤3 min Superteam — roteiro pronto em `pixzclaw-pi/VIDEO-SCRIPT.md` (11 planos, 2:56), falta gravar  
+2. Submit Superteam Earn (deadline 2026-08-06 23:59 BRT, `agentAccess: HUMAN_ONLY`)  
 4. On-ramp (MoonPay/Transak/exchange) — descartado como prioridade  
 5. Botões inline Telegram nativos  
 6. Conversão BRL→USDC real  
@@ -327,7 +334,7 @@ Você está assumindo um projeto em andamento. Leia PRIMEIRO o arquivo:
 
 ## Estado atual
 FEITO: core, 3 plugins, wasm, releases, Pi com `zeroclaw plugin`, skills onboarding/daily/soul, fatura v0.3 com QR.
-PENDENTE: config real estável no Pi, desligar redact no agent, persona 🦞 carregada, possível bot/agent Telegram isolado, PR upstream, vídeo demo, submit Superteam.
+PENDENTE: config real estável no Pi, desligar redact no agent, persona 🦞 carregada, possível bot/agent Telegram isolado, gravar vídeo demo, submit Superteam.
 
 ## Regras
 - Manter pure core / thin shim; crate-type cdylib+rlib; cargo test sem rede; wasm32-wasip2.

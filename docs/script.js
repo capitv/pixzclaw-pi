@@ -93,11 +93,11 @@
       "flow.title": "Uma fatura sai.<br>Dois trilhos voltam.",
       "flow.lead": "Não é on-ramp, não é câmbio. São dois trilhos independentes carregando o mesmo <code>invoice_id</code>: o PIX vai pro banco do lojista, o USDC vai pra carteira dele via Solana Pay com uma <em class=\"em-sol\">reference</em> única. Só um dos dois pode ser verificado por software — e a página inteira é honesta sobre qual.",
 
-      "legend.title": "Legenda de cores — cada cor é um ator, nunca enfeite",
-      "legend.brand": "<b>PixZClaw</b> — o plugin, a marca, o que você instala",
-      "legend.host": "<b>ZeroClaw</b> — o runtime host, o cron, o agente",
-      "legend.pix": "<b>trilho PIX</b> — BRL, banco, confirmação humana",
-      "legend.sol": "<b>trilho Solana</b> — USDC, on-chain, valor conferido",
+      "legend.title": "Legenda de cores — só o trilho que a máquina confere ganha cor",
+      "legend.brand": "<b>PixZClaw</b> — azul: o plugin, a marca, o que você instala",
+      "legend.host": "<b>ZeroClaw</b> — o mesmo azul, mais claro: o runtime host, o cron, o agente",
+      "legend.pix": "<b>trilho PIX</b> — cinza: nenhum software confere esse trilho",
+      "legend.sol": "<b>trilho Solana</b> — roxo→verde da Solana: valor conferido on-chain",
 
       "dg.a11yTitle": "Diagrama: da fatura aos dois trilhos de pagamento até o recibo",
       "dg.a11yDesc": "A fatura emitida no Telegram se divide em dois trilhos. O trilho PIX gera um código Copia e Cola, o dinheiro cai no banco do lojista e só o operador pode confirmar. O trilho Solana gera uma URL Solana Pay com reference, o USDC cai na carteira do lojista e o valor recebido é conferido on-chain. Os dois convergem num recibo.",
@@ -216,7 +216,7 @@
       "where.th2": "Custo",
       "where.th3": "Observação",
       "where.r1.opt": "Raspberry Pi 3 / 3B+ <span>1 GB RAM</span>",
-      "where.r1.cost": "~R$ 600 <i>uma vez</i>",
+      "where.r1.cost": "~R$ 350 <i>uma vez</i>",
       "where.r1.note": "É onde roda hoje, em produção, com o bot do Telegram no ar.",
       "where.r2.opt": "VPS <span>1 vCPU / 1 GB</span>",
       "where.r2.cost": "~R$ 25–30 <i>/mês</i>",
@@ -246,7 +246,7 @@
       "faq.q3.q": "O PIX confirma sozinho?",
       "faq.q3.a": "Não. O PIX do banco não é visível on-chain, então a ferramenta nunca diz “pago” por conta própria — o operador confirma o recebimento. É honestidade por design.",
       "faq.q4.q": "Quanto custa o host?",
-      "faq.q4.a": "Depende de onde você põe. Hoje ele roda num Raspberry Pi 3B+ (~R$ 600 uma vez, preço de julho/2026), mas uma VPS de 1 vCPU e 1 GB sai por ~R$ 25–30/mês, e o tier Always Free da Oracle Cloud custa R$ 0. Os três números estão na seção <a href=\"#onde-roda\">Onde roda</a>.",
+      "faq.q4.a": "Depende de onde você põe. Hoje ele roda num Raspberry Pi 3B+ (~R$ 350 uma vez, preço de julho/2026), mas uma VPS de 1 vCPU e 1 GB sai por ~R$ 25–30/mês, e o tier Always Free da Oracle Cloud custa R$ 0. Os três números estão na seção <a href=\"#onde-roda\">Onde roda</a>.",
       "faq.q5.q": "É seguro deixar um agente cobrar por mim?",
       "faq.q5.a": "Sim. São ferramentas T0/T1 (sem private key), com teto de valor, destino travado e proteção contra prompt injection. O agente monta a cobrança; quem paga é sempre o cliente na carteira dele.",
       "faq.q6.q": "Como o lembrete automático funciona sem serviço externo?",
@@ -334,11 +334,11 @@
       "flow.title": "One invoice out.<br>Two rails back.",
       "flow.lead": "Not an on-ramp, not an exchange. Two independent rails carrying the same <code>invoice_id</code>: PIX lands in the merchant's bank, USDC lands in the merchant's wallet via Solana Pay with a unique <em class=\"em-sol\">reference</em>. Only one of them can be verified by software — and this page is honest about which.",
 
-      "legend.title": "Colour legend — every colour is an actor, never decoration",
-      "legend.brand": "<b>PixZClaw</b> — the plugin, the brand, what you install",
-      "legend.host": "<b>ZeroClaw</b> — the host runtime, the cron, the agent",
-      "legend.pix": "<b>PIX rail</b> — BRL, bank, human confirmation",
-      "legend.sol": "<b>Solana rail</b> — USDC, on-chain, amount verified",
+      "legend.title": "Colour legend — only the rail a machine can verify gets colour",
+      "legend.brand": "<b>PixZClaw</b> — blue: the plugin, the brand, what you install",
+      "legend.host": "<b>ZeroClaw</b> — the same blue, lighter: the host runtime, the cron, the agent",
+      "legend.pix": "<b>PIX rail</b> — grey: no software verifies this rail",
+      "legend.sol": "<b>Solana rail</b> — Solana's purple→green: amount verified on-chain",
 
       "dg.a11yTitle": "Diagram: from the invoice through both payment rails to the receipt",
       "dg.a11yDesc": "The invoice issued on Telegram splits into two rails. The PIX rail produces a Copy & Paste code, the money lands in the merchant's bank and only the operator can confirm it. The Solana rail produces a Solana Pay URL with a reference, USDC lands in the merchant's wallet and the received amount is verified on-chain. Both converge into a receipt.",
@@ -457,15 +457,15 @@
       "where.th2": "Cost",
       "where.th3": "Notes",
       "where.r1.opt": "Raspberry Pi 3 / 3B+ <span>1 GB RAM</span>",
-      "where.r1.cost": "~R$600 <i>once</i>",
+      "where.r1.cost": "~US$ 69 <i>once</i>",
       "where.r1.note": "This is where it runs today, in production, with the Telegram bot live.",
       "where.r2.opt": "VPS <span>1 vCPU / 1 GB</span>",
-      "where.r2.cost": "~R$25–30 <i>/mo</i>",
+      "where.r2.cost": "~US$ 5–6 <i>/mo</i>",
       "where.r2.note": "Vultr US$5 · DigitalOcean US$6 · Hetzner €4–5. List prices as of July 2026.",
       "where.r3.opt": "Oracle Cloud Always Free <span>ARM Ampere A1</span>",
-      "where.r3.cost": "R$0",
+      "where.r3.cost": "US$ 0",
       "where.r3.note": "Free tier. Heads up: Always Free limits were cut in half in June 2026.",
-      "where.fine": "FX rate used: US$1 = R$5.07 · 2026-07-21. Hardware and VPS prices move; the date stays visible so this page can age honestly.",
+      "where.fine": "Brazilian prices converted at US$1 = R$5.07 · 2026-07-21. Hardware and VPS prices move; the date stays visible so this page can age honestly.",
 
       /* ---------- 07 install ---------- */
       "install.kicker": "Installation",
@@ -487,7 +487,7 @@
       "faq.q3.q": "Does PIX confirm itself?",
       "faq.q3.a": "No. Bank PIX isn't visible on-chain, so the tool never claims “paid” on its own — the operator confirms receipt. Honesty by design.",
       "faq.q4.q": "What does the host cost?",
-      "faq.q4.a": "Depends where you put it. Today it runs on a Raspberry Pi 3B+ (~R$600 once, July 2026 pricing), but a 1 vCPU / 1 GB VPS runs ~R$25–30/month, and Oracle Cloud's Always Free tier costs R$0. All three numbers are in the <a href=\"#onde-roda\">Where it runs</a> section.",
+      "faq.q4.a": "Depends where you put it. Today it runs on a Raspberry Pi 3B+ (~US$69 once, July 2026 pricing), but a 1 vCPU / 1 GB VPS runs ~US$5–6/month, and Oracle Cloud's Always Free tier costs US$0. All three numbers are in the <a href=\"#onde-roda\">Where it runs</a> section.",
       "faq.q5.q": "Is it safe to let an agent charge on my behalf?",
       "faq.q5.a": "Yes. These are T0/T1 tools (no private key), with an amount cap, a locked recipient, and prompt-injection protection. The agent builds the charge; the customer always pays from their own wallet.",
       "faq.q6.q": "How does the automatic reminder work with no external service?",
@@ -763,25 +763,41 @@
      dasharray. Revealing the mask reveals the sharp line, its blurred twin
      and the arrowhead together, while the visible 5-5 pattern stays put.
 
+     Progress comes from the sticky pin, not from a viewport heuristic. `.pin`
+     is a tall block of pure scroll travel; `.pin__stage` sticks inside it. So
+
+       p = -pinRect.top / (pinRect.height - viewportHeight)
+
+     is exactly 0 the instant the stage pins to the top, and exactly 1 the
+     instant it releases — the section is glued to the scroll and the rails
+     grow with it. The scroll itself is never touched: no wheel handler, no
+     touch handler, no preventDefault anywhere in this block.
+
      Cost per frame: one getBoundingClientRect (read once, at the top) and at
      most eight setAttribute calls. No filter is animated — the blur lives on
-     a static twin; only the mask offset moves.
+     a static twin; only the mask offset moves. The pills ride the same p:
+     each one crosses its own data-lit threshold and CSS animates the entrance.
 
-     It runs only while the figure is on screen (IntersectionObserver), only
+     It runs only while the pin is on screen (IntersectionObserver), only
      above 640px (below that the diagram is mostly scrolled out of view inside
      its own horizontal scroller, and the effect costs more than it gives),
      and never under prefers-reduced-motion. All of it is live: flipping the
      OS motion setting or rotating a tablet re-evaluates without a reload.
-     The un-drawn state is applied here and only here — with no JS, the
-     markup already ships every rail fully painted.
+     The `js-pin` class — which is the only thing that gives `.pin` its height
+     — is added here and removed here, so a page with no JS, or with motion
+     reduced, or on a phone, has no tall empty block to scroll through and
+     ships every rail fully painted.
      ============================================================ */
 
   (function () {
     var fig = document.querySelector("[data-flowdraw]");
-    if (!fig || !window.matchMedia || !window.requestAnimationFrame) return;
+    var pin = document.querySelector("[data-flowpin]");
+    if (!fig || !pin || !window.matchMedia || !window.requestAnimationFrame) return;
 
     var svg = fig.querySelector(".diagram__svg");
     if (!svg) return;
+
+    var docEl = document.documentElement;
 
     /* --- collect the segments; bail out whole if the geometry is unreadable --- */
     var segs = [];
@@ -814,7 +830,12 @@
     });
 
     var mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    var mqWide = window.matchMedia("(min-width: 640px)");
+    /* 1020px, not 640: the SVG has min-width 940px and the chrome around it
+       (wrap gutter 43px + scroller padding 32px + border 2px) eats ~77px, so
+       below ~1017px of viewport the diagram still scrolls sideways inside its
+       own box. Pinning a diagram the reader cannot see whole is worse than not
+       pinning at all, so narrower screens get the complete static diagram. */
+    var mqWide = window.matchMedia("(min-width: 1020px)");
 
     var frame = null;
     var enabled = false;
@@ -851,16 +872,11 @@
     function render() {
       frame = null;
 
-      var rect = fig.getBoundingClientRect();
-      var vh = window.innerHeight || document.documentElement.clientHeight || 1;
+      var rect = pin.getBoundingClientRect();
+      var vh = window.innerHeight || docEl.clientHeight || 1;
 
-      /* p = 0 when the figure's top edge enters low in the viewport;
-         p = 1 once the whole figure has settled comfortably inside it. */
-      var startY = vh * 0.90;
-      var endY = Math.max(vh * 0.16, vh * 0.70 - rect.height);
-      var span = startY - endY;
-
-      apply(span > 0 ? clamp01((startY - rect.top) / span) : 1);
+      /* p = 0 the instant the pin engages, p = 1 the instant it releases. */
+      apply(clamp01(-rect.top / Math.max(1, rect.height - vh)));
     }
 
     function schedule() {
@@ -885,6 +901,10 @@
       var i;
 
       if (on) {
+        /* the ONLY thing that makes .pin tall — see the .js-pin rules in the
+           stylesheet. Nothing below this line assumes it, but everything
+           above it depends on it. */
+        docEl.classList.add("js-pin");
         for (i = 0; i < segs.length; i++) {
           segs[i].last = -1;
           segs[i].path.setAttribute("stroke-dasharray", segs[i].len);
@@ -896,15 +916,16 @@
         }
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", onScroll, { passive: true });
-        if (io) io.observe(fig);
+        if (io) io.observe(pin);
         onScreen = true;
         schedule();
         return;
       }
 
+      docEl.classList.remove("js-pin");
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      if (io) io.unobserve(fig);
+      if (io) io.unobserve(pin);
       if (frame !== null) {
         window.cancelAnimationFrame(frame);
         frame = null;
