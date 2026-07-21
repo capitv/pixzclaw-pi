@@ -198,7 +198,7 @@ sobrevive (não é base58).
 
 ### Build plugins (Windows)
 ```powershell
-$env:Path = "C:\Users\eduar\.cargo\bin;" + $env:Path
+$env:Path = "$HOME\.cargo\bin;" + $env:Path
 cd E:\zeroclawbount\zeroclaw-plugins\plugins\brl-usdc-invoice
 cargo test
 cargo build --target wasm32-wasip2 --release
