@@ -1102,13 +1102,6 @@ code {
 .dg-t { font-family: var(--font-mono); font-size: 12.5px; fill: var(--text); }
 .dg-t--strong { font-family: var(--font-display); font-weight: 700; font-size: 15px; fill: var(--text); }
 .dg-t--dim { font-size: 10.5px; fill: var(--text-faint); }
-.dg-cap {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  fill: var(--accent);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 .dg-rail {
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -1121,6 +1114,70 @@ code {
 .dg-line--pix { stroke: var(--pix); }
 .dg-line--sol { stroke: url(#dgSol); }
 .dg-line--dash { stroke-dasharray: 5 5; opacity: 0.75; }
+
+/* --------------------------------------------------------------------------
+   The money-flow draw-on-scroll.
+
+   The technique is ported from the "Gemini effect" (framer-motion animating
+   pathLength on a <motion.path>, plus a blurred twin underneath for the
+   diffuse light). Here there is no React and no framer-motion: each connector
+   sits in a <g> revealed by its own SVG <mask>, and the mask's path is what
+   carries stroke-dasharray / stroke-dashoffset. One attribute write per
+   connector per frame therefore reveals three things at once — the sharp
+   line, its blurred twin and the arrowhead — and the PIX legs keep their
+   literal 5-5 dash pattern the whole time, because the dash that means
+   "a human has to confirm this" is never the dash doing the animating.
+
+   No colour is invented: the glow of a rail is that rail's own colour. The
+   extra richness comes from weight, opacity, blur radius and entry timing.
+
+   The masks ship wide open in index.html; the un-drawn state exists only
+   while script.js is running. No JS, or prefers-reduced-motion, or a screen
+   narrow enough that the diagram is mostly scrolled off — full diagram.
+   -------------------------------------------------------------------------- */
+
+.dg-mask {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 26;      /* wide enough that the blurred twin is not clipped */
+  stroke-linecap: butt;  /* butt keeps the drawing front crisp along the path */
+  stroke-linejoin: round;
+}
+
+/* the blurred twin — same geometry, same colour, no arrowhead */
+.dg-line--glow { stroke-width: 3.6; opacity: 0.42; filter: blur(3px); }
+/* the verified rail carries more light than the one that needs a human */
+.dg-line--sol.dg-line--glow { stroke-width: 4.4; opacity: 0.55; }
+.dg-line--dash.dg-line--glow { stroke-width: 3.2; opacity: 0.22; filter: blur(4px); }
+
+/* ---- node pills ----------------------------------------------------------
+   Every node's caption rides just outside its box as a pill, in the page's
+   existing chip idiom: small mono, hairline border, barely-there fill. The
+   border takes the colour of the rail the node belongs to, so the pills are
+   readable as a sequence even before anything animates. */
+
+.dg-pill rect {
+  fill: rgba(232, 236, 241, 0.028);
+  stroke: var(--rule);
+  stroke-width: 1;
+  transition: stroke 0.45s ease, fill 0.45s ease;
+}
+.dg-pill text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--text-dim);
+  transition: fill 0.45s ease, opacity 0.45s ease;
+}
+.dg-pill--brand rect { stroke: rgba(255, 90, 60, 0.45); }
+.dg-pill--pix   rect { stroke: rgba(50, 188, 173, 0.45); }
+.dg-pill--sol   rect { stroke: rgba(20, 241, 149, 0.4); }
+.dg-pill--out   rect { stroke: rgba(20, 241, 149, 0.55); }
+/* the operator pill echoes its ghost box: dashed, because it is not automatic */
+.dg-pill--ghost rect { stroke: rgba(50, 188, 173, 0.32); stroke-dasharray: 3 3; }
+
+/* the not-yet-reached state. Applied by script.js only — never in the markup. */
+.dg-pill.is-dim rect { stroke: var(--rule); fill: transparent; }
+.dg-pill.is-dim text { fill: var(--text-faint); opacity: 0.45; }
 
 .scroll-hint {
   display: none;

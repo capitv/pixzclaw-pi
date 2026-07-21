@@ -108,6 +108,7 @@
       "dg.invoiceAmt": "R$ 150,00",
       "dg.invoiceSub": "teto · destino travado",
       "dg.pixCode": "PIX Copia e Cola",
+      "dg.pixCodeSub": "EMV + CRC16",
       "dg.pixBank": "banco do lojista",
       "dg.pixBankSub": "fora do alcance do agente",
       "dg.pixConfirm": "operador confirma",
@@ -117,6 +118,7 @@
       "dg.solWallet": "carteira do lojista",
       "dg.solWalletSub": "USDC · pubkey travada",
       "dg.solCheck": "valor conferido",
+      "dg.solCheckSub": "pre/postTokenBalances",
       "dg.receipt": "RECIBO 🧾",
       "dg.receiptSub": "com link Solscan",
       "dg.legendSolid": "linha cheia — automático, valor conferido",
@@ -347,6 +349,7 @@
       "dg.invoiceAmt": "R$150.00",
       "dg.invoiceSub": "cap · recipient locked",
       "dg.pixCode": "PIX Copy & Paste",
+      "dg.pixCodeSub": "EMV + CRC16",
       "dg.pixBank": "merchant's bank",
       "dg.pixBankSub": "out of the agent's reach",
       "dg.pixConfirm": "operator confirms",
@@ -356,6 +359,7 @@
       "dg.solWallet": "merchant's wallet",
       "dg.solWalletSub": "USDC · locked pubkey",
       "dg.solCheck": "amount verified",
+      "dg.solCheckSub": "pre/postTokenBalances",
       "dg.receipt": "RECEIPT 🧾",
       "dg.receiptSub": "with Solscan link",
       "dg.legendSolid": "solid line — automatic, amount verified",
@@ -736,6 +740,197 @@
 
     watch(mqMotion);
     watch(mqPointer);
+    watch(mqWide);
+    evaluate();
+  })();
+
+  /* ============================================================
+     Section 01 — the money-flow diagram draws itself on scroll.
+
+     Technique ported from the "Gemini effect": there, framer-motion animates
+     `pathLength` on each <motion.path> and lays a blurred copy underneath for
+     the diffuse light. With no framework the same thing is two primitives:
+
+       len = path.getTotalLength()
+       strokeDasharray  = len
+       strokeDashoffset = len * (1 - progress)
+
+     with one twist. Our PIX legs are *literally* dashed, because a dashed
+     line on this page means "no software can verify this — a human confirms".
+     Animating dasharray on them would destroy that reading, so the dash that
+     animates is never the dash you see: each connector sits inside a <g> with
+     its own <mask>, and it is the mask's fat white path that gets the
+     dasharray. Revealing the mask reveals the sharp line, its blurred twin
+     and the arrowhead together, while the visible 5-5 pattern stays put.
+
+     Cost per frame: one getBoundingClientRect (read once, at the top) and at
+     most eight setAttribute calls. No filter is animated — the blur lives on
+     a static twin; only the mask offset moves.
+
+     It runs only while the figure is on screen (IntersectionObserver), only
+     above 640px (below that the diagram is mostly scrolled out of view inside
+     its own horizontal scroller, and the effect costs more than it gives),
+     and never under prefers-reduced-motion. All of it is live: flipping the
+     OS motion setting or rotating a tablet re-evaluates without a reload.
+     The un-drawn state is applied here and only here — with no JS, the
+     markup already ships every rail fully painted.
+     ============================================================ */
+
+  (function () {
+    var fig = document.querySelector("[data-flowdraw]");
+    if (!fig || !window.matchMedia || !window.requestAnimationFrame) return;
+
+    var svg = fig.querySelector(".diagram__svg");
+    if (!svg) return;
+
+    /* --- collect the segments; bail out whole if the geometry is unreadable --- */
+    var segs = [];
+    var ok = true;
+
+    Array.prototype.forEach.call(svg.querySelectorAll(".dg-seg"), function (g) {
+      var line = g.querySelector(".dg-line:not(.dg-line--glow)");
+      var mask = document.getElementById(g.getAttribute("data-mask") || "");
+      var maskPath = mask ? mask.querySelector(".dg-mask") : null;
+
+      if (!line || !maskPath || typeof line.getTotalLength !== "function") { ok = false; return; }
+
+      var len = line.getTotalLength();
+      if (!len || !isFinite(len)) { ok = false; return; }
+
+      segs.push({
+        path: maskPath,
+        len: len,
+        from: parseFloat(g.getAttribute("data-from")) || 0,
+        to: parseFloat(g.getAttribute("data-to")) || 1,
+        last: -1
+      });
+    });
+
+    if (!ok || !segs.length) return;
+
+    var pills = [];
+    Array.prototype.forEach.call(svg.querySelectorAll(".dg-pill[data-lit]"), function (g) {
+      pills.push({ el: g, at: parseFloat(g.getAttribute("data-lit")) || 0, lit: true });
+    });
+
+    var mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var mqWide = window.matchMedia("(min-width: 640px)");
+
+    var frame = null;
+    var enabled = false;
+    var onScreen = true;   /* true until an IntersectionObserver says otherwise */
+
+    function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+    /* smoothstep: segments ease in and out instead of snapping at the edges */
+    function ease(t) { return t * t * (3 - 2 * t); }
+
+    function apply(p) {
+      var i, s, lp, off;
+
+      for (i = 0; i < segs.length; i++) {
+        s = segs[i];
+        lp = s.to > s.from ? clamp01((p - s.from) / (s.to - s.from)) : (p >= s.to ? 1 : 0);
+        off = Math.round(s.len * (1 - ease(lp)) * 100) / 100;
+        if (off !== s.last) {
+          s.path.setAttribute("stroke-dashoffset", off);
+          s.last = off;
+        }
+      }
+
+      for (i = 0; i < pills.length; i++) {
+        var lit = p >= pills[i].at;
+        if (lit !== pills[i].lit) {
+          pills[i].lit = lit;
+          pills[i].el.classList.toggle("is-dim", !lit);
+        }
+      }
+    }
+
+    /* One geometry read per frame, at the top, before anything is written. */
+    function render() {
+      frame = null;
+
+      var rect = fig.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight || 1;
+
+      /* p = 0 when the figure's top edge enters low in the viewport;
+         p = 1 once the whole figure has settled comfortably inside it. */
+      var startY = vh * 0.90;
+      var endY = Math.max(vh * 0.16, vh * 0.70 - rect.height);
+      var span = startY - endY;
+
+      apply(span > 0 ? clamp01((startY - rect.top) / span) : 1);
+    }
+
+    function schedule() {
+      if (frame === null && enabled) frame = window.requestAnimationFrame(render);
+    }
+
+    function onScroll() { if (onScreen) schedule(); }
+
+    var io = null;
+    if (window.IntersectionObserver) {
+      io = new window.IntersectionObserver(function (entries) {
+        onScreen = entries[0].isIntersecting;
+        /* render once on the way out too, so the parked state is the right one */
+        schedule();
+      }, { rootMargin: "25% 0px 25% 0px" });
+    }
+
+    function setEnabled(on) {
+      if (on === enabled) return;
+      enabled = on;
+
+      var i;
+
+      if (on) {
+        for (i = 0; i < segs.length; i++) {
+          segs[i].last = -1;
+          segs[i].path.setAttribute("stroke-dasharray", segs[i].len);
+          segs[i].path.setAttribute("stroke-dashoffset", segs[i].len);
+        }
+        for (i = 0; i < pills.length; i++) {
+          pills[i].lit = false;
+          pills[i].el.classList.add("is-dim");
+        }
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onScroll, { passive: true });
+        if (io) io.observe(fig);
+        onScreen = true;
+        schedule();
+        return;
+      }
+
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (io) io.unobserve(fig);
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+        frame = null;
+      }
+      /* back to the shipped state: every rail whole, every pill arrived */
+      for (i = 0; i < segs.length; i++) {
+        segs[i].path.removeAttribute("stroke-dasharray");
+        segs[i].path.removeAttribute("stroke-dashoffset");
+        segs[i].last = -1;
+      }
+      for (i = 0; i < pills.length; i++) {
+        pills[i].lit = true;
+        pills[i].el.classList.remove("is-dim");
+      }
+    }
+
+    function evaluate() {
+      setEnabled(!mqMotion.matches && mqWide.matches);
+    }
+
+    function watch(mq) {
+      if (mq.addEventListener) mq.addEventListener("change", evaluate);
+      else if (mq.addListener) mq.addListener(evaluate);
+    }
+
+    watch(mqMotion);
     watch(mqWide);
     evaluate();
   })();
