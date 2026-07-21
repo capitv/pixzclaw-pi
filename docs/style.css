@@ -53,6 +53,20 @@
   --gutter: 1.35rem;
   --r: 12px;
   --r-sm: 7px;
+
+  /* --- glass, derived from OUR palette -------------------------------------
+     The reference this was ported from stacked pure white on zinc-950. Pure
+     white glass fights coral, so the tint here is --text (#E8ECF1) at a very
+     low alpha over our own #0B0E14: it lifts the surface without introducing
+     a fifth colour. --glass-solid is the no-backdrop-filter fallback and is
+     the *default* value; the blur is layered on top inside @supports.
+     Glass is used in exactly two places: the two hero badges and the proof
+     band. Everything else on this page stays flat and editorial on purpose. */
+  --glass-solid: #141C27;
+  --glass-tint: rgba(232, 236, 241, 0.05);
+  --glass-brd: rgba(232, 236, 241, 0.12);
+  --glass-hi: rgba(255, 255, 255, 0.085);
+  --glass-shadow: 0 26px 50px -26px rgba(0, 0, 0, 0.92);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -432,9 +446,6 @@ code {
   overflow: hidden;
   box-shadow: 0 34px 70px -28px rgba(0,0,0,0.85), 0 2px 0 rgba(255,255,255,0.02) inset;
 }
-@media (min-width: 980px) {
-  .chat { transform: translateY(-0.5rem) rotate(-0.35deg); }
-}
 
 .chat__bar {
   display: flex;
@@ -494,7 +505,7 @@ code {
   bottom: 0.35em;
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: rgba(232,236,241,0.55);
+  color: rgba(232,236,241,0.82);  /* AA over both bubble fills at this size */
 }
 .msg--out {
   align-self: flex-end;
@@ -615,6 +626,281 @@ code {
 .paid__line--link { color: var(--sol-b); }
 .paid__line--dim { color: var(--text-faint); }
 
+/* ==========================================================================
+   The device — the Telegram mock is now held in a phone.
+   Ported by hand from a React/Tailwind reference into plain CSS: bezel with a
+   double inset ring, machined side buttons, Dynamic Island, diagonal screen
+   glare and the home bar. The hardware is deliberately neutral metal — it is
+   an object, not an actor, so it takes no colour from the legend. The one
+   coloured pixel on it is the island's live dot, and that is coral because
+   coral means PixZClaw and PixZClaw is what is running.
+   ========================================================================== */
+
+.stage {
+  position: relative;
+  --device-w: min(100%, clamp(240px, 84vw, 336px));
+}
+
+/* atmosphere behind the phone: our coral, plus a whisper of host cyan.
+   No generic purple bloom — the purple in this page belongs to Solana only. */
+.stage__glow {
+  position: absolute;
+  inset: -8% -6% -4%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(38% 30% at 26% 18%, rgba(255, 90, 60, 0.16), transparent 70%),
+    radial-gradient(40% 34% at 78% 82%, rgba(34, 211, 238, 0.10), transparent 72%);
+  filter: blur(34px);
+}
+
+.device {
+  position: relative;
+  z-index: 1;
+  width: var(--device-w);
+  aspect-ratio: 9 / 19.2;
+  margin: 0 auto;
+  border-radius: 2.75rem;
+  background-color: #111;
+  box-shadow:
+    inset 0 0 0 2px #52565F,
+    inset 0 0 0 7px #000,
+    0 40px 80px -15px rgba(0, 0, 0, 0.9),
+    0 15px 25px -5px rgba(0, 0, 0, 0.7);
+  transform: perspective(1200px);
+  will-change: transform;
+}
+
+.device__btn {
+  position: absolute;
+  width: 3px;
+  left: -3px;
+  border-radius: 2px 0 0 2px;
+  background: linear-gradient(90deg, #404040 0%, #171717 100%);
+  box-shadow:
+    -2px 0 5px rgba(0, 0, 0, 0.8),
+    inset -1px 0 1px rgba(255, 255, 255, 0.15),
+    inset 1px 0 2px rgba(0, 0, 0, 0.8);
+}
+.device__btn--silent { top: 15%;  height: 4.2%; }
+.device__btn--volup  { top: 22.5%; height: 7%; }
+.device__btn--voldn  { top: 31.5%; height: 7%; }
+.device__btn--power {
+  left: auto;
+  right: -3px;
+  top: 25%;
+  height: 11%;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(270deg, #404040 0%, #171717 100%);
+  box-shadow:
+    2px 0 5px rgba(0, 0, 0, 0.8),
+    inset 1px 0 1px rgba(255, 255, 255, 0.15),
+    inset -1px 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.device__screen {
+  position: absolute;
+  inset: 7px;
+  border-radius: 2.35rem;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  padding-top: 2.55rem;
+}
+
+.device__island {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(56%, 100px);
+  height: 28px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 11px;
+}
+.device__live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);   /* coral = PixZClaw is the thing that is live */
+  animation: livepulse 2.6s ease-out infinite;
+}
+@keyframes livepulse {
+  0%        { box-shadow: 0 0 0 0 rgba(255, 90, 60, 0.5); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(255, 90, 60, 0); }
+}
+
+.device__glare {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 45%);
+}
+.device__home {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(38%, 120px);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 5;
+}
+
+/* the chat becomes the screen: it loses its own frame and gains the phone's */
+.device .chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+.device .chat__bar { flex-shrink: 0; padding: 0.5rem 0.6rem; }
+.device .chat__avatar { width: 28px; height: 28px; padding: 5px; }
+.device .chat__name { font-size: 0.82rem; }
+.device .chat__status { font-size: 0.62rem; }
+.device .chat__tag { font-size: 0.62rem; }
+
+/* the only scroll on the phone: subtle, on the Y axis, keyboard reachable */
+.device .chat__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0.75rem 0.6rem 1.7rem;
+  gap: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 236, 241, 0.16) transparent;
+}
+/* a real chat sits on the bottom of the screen. `margin-top:auto` on the first
+   child does that without breaking the scroll (unlike justify-content:flex-end,
+   which can push overflow out of reach). */
+.device .chat__body > :first-child { margin-top: auto; }
+.device .chat__body::-webkit-scrollbar { width: 4px; }
+.device .chat__body::-webkit-scrollbar-thumb {
+  background: rgba(232, 236, 241, 0.16);
+  border-radius: 999px;
+}
+.device .chat__body:focus-visible { outline-offset: -3px; }
+
+/* type scale inside the handset — the copy is identical, only the size drops */
+.device .msg { font-size: 0.8rem; padding: 0.5em 0.65em 1.05em; max-width: 96%; }
+.device .msg--card { padding: 0.62em 0.65em 1.1em; }
+.device .inv__title { font-size: 0.83rem; }
+.device .inv__amount { font-size: 0.79rem; margin-bottom: 0.6em; }
+.device .inv__rails { padding-left: 0.55rem; }
+.device .railrow__chip { font-size: 0.63rem; padding: 0.18em 0.42em; }
+.device .railrow__meta { font-size: 0.61rem; }
+.device .inv__code { font-size: 0.6rem; }
+.device .inv__note { font-size: 0.75rem; }
+.device .inv__lock { font-size: 0.65rem; }
+.device .inv__action { font-size: 0.69rem; }
+.device .chat__gap { font-size: 0.58rem; }
+.device .paid__badge { font-size: 0.63rem; }
+.device .paid__title { font-size: 0.79rem; }
+.device .paid__line { font-size: 0.68rem; }
+.device .msg__time { font-size: 0.58rem; }
+
+/* ---- floating glass badges ----
+   Two facts, both already proven elsewhere on this page: the on-chain amount
+   check (section 05) and the self-deleting reminder (section 03). No metric
+   is invented here. */
+
+.stage__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+
+.gbadge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  position: relative;
+  z-index: 6;
+  padding: 0.6rem 0.85rem;
+  border-radius: 13px;
+  max-width: 17rem;
+  background: var(--glass-solid);           /* fallback first, blur is opt-in */
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+}
+.gbadge__k {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.gbadge__v {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: -0.012em;
+  color: var(--text);
+  line-height: 1.3;
+}
+.gbadge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+/* the dot names the actor, exactly like the colour legend in section 01 */
+.gbadge__dot--sol { background: linear-gradient(135deg, var(--sol-a), var(--sol-b)); }
+.gbadge__dot--zc  { background: var(--zc); }
+
+@supports ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .gbadge {
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(22px) saturate(135%);
+    backdrop-filter: blur(22px) saturate(135%);
+  }
+}
+
+/* On desktop the badges leave the flow and float off the phone's corners.
+   They hang over the bezel, never over the screen: nothing they cover is
+   information. Below 980px they drop back into a row under the device. */
+@media (min-width: 980px) {
+  /* the padding is what keeps the badges clear of the screen: each one is
+     roughly as tall as the band reserved for it, so it lands on the bezel's
+     rounded corner and nowhere near a message */
+  .stage { padding: 3.7rem 0 3.9rem; }
+  .stage__badges { margin-top: 0; position: static; }
+  .gbadge {
+    position: absolute;
+    max-width: 15.5rem;
+    animation: gfloat 7s ease-in-out infinite;
+  }
+  .gbadge--verify { top: 0; left: 0; }
+  .gbadge--remind { bottom: 0; right: 0; animation-delay: -3.5s; }
+}
+@keyframes gfloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
 /* ============================== Proof band ============================== */
 
 .proof {
@@ -623,13 +909,43 @@ code {
     linear-gradient(90deg, rgba(50,188,173,0.05), transparent 45%, rgba(153,69,255,0.05));
   padding: clamp(1.8rem, 4vw, 2.8rem) 0 1.6rem;
 }
+/* the one raised surface in the document body: the four verifiable claims sit
+   on glass so they read as evidence pinned above the page, not as body copy */
 .proof__list {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 1.15rem 1.3rem;
   display: grid;
   gap: 0;
   grid-template-columns: minmax(0, 1fr);
+  border-radius: var(--r);
+  background: var(--glass-solid);           /* fallback first, blur is opt-in */
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+}
+/* the diffuse corner glow — coral, at the lowest alpha that still registers */
+.proof__list::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -60px;
+  top: -70px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 90, 60, 0.17), transparent);
+  filter: blur(30px);
+  pointer-events: none;
+}
+@supports ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .proof__list {
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
+    backdrop-filter: blur(20px) saturate(130%);
+  }
 }
 .proof__list li {
   padding: 0.9rem 0;
@@ -1552,6 +1868,15 @@ pre code { color: var(--code-text); font-family: var(--font-mono); white-space: 
   .tool { padding: 1.2rem 1rem; }
   .rem__offer { font-size: 0.8rem; }
   .msg { max-width: 100%; }
+  .stage { --device-w: min(100%, 300px); }
+  /* a hair taller on the smallest screens so the whole conversation still
+     lands inside the screen instead of being cut at the home bar */
+  .device { aspect-ratio: 9 / 20.2; }
+  .device .chat__body { padding: 0.65rem 0.5rem 1.65rem; gap: 0.44rem; }
+  .gbadge { padding: 0.5rem 0.72rem; max-width: 100%; }
+  .gbadge__v { font-size: 0.81rem; }
+  .gbadge__k { font-size: 0.6rem; letter-spacing: 0.07em; }
+  .proof__list { padding: 1rem 1.05rem; }
   .inv__title { font-size: 0.84rem; }
   .proof__num { font-size: 2.1rem; }
   .not__x { margin-bottom: 0.6rem; }

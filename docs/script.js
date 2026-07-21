@@ -32,6 +32,7 @@
       "a11y.copy1": "Copiar comando",
       "a11y.copy2": "Copiar comandos",
       "a11y.footerNav": "Links do projeto",
+      "a11y.screen": "Tela do aparelho — conversa do Telegram, rolável",
 
       "nav.flow": "fluxo",
       "nav.tools": "ferramentas",
@@ -50,6 +51,10 @@
       "hero.spec.host": "host de produção",
       "hero.spec.hostVal": "Raspberry Pi 3",
       "hero.spec.keys": "chaves privadas",
+      "hero.badge.verify.k": "valor conferido on-chain",
+      "hero.badge.verify.v": "PAID ✅ — 27,27 de 27,27 USDC",
+      "hero.badge.remind.k": "lembrete ativo",
+      "hero.badge.remind.v": "avisa quando a 412 pagar",
 
       /* ---------- chat mock ---------- */
       "chat.status": "online · Telegram",
@@ -266,6 +271,7 @@
       "a11y.copy1": "Copy command",
       "a11y.copy2": "Copy commands",
       "a11y.footerNav": "Project links",
+      "a11y.screen": "Device screen — Telegram conversation, scrollable",
 
       "nav.flow": "flow",
       "nav.tools": "tools",
@@ -284,6 +290,10 @@
       "hero.spec.host": "production host",
       "hero.spec.hostVal": "Raspberry Pi 3",
       "hero.spec.keys": "private keys",
+      "hero.badge.verify.k": "amount verified on-chain",
+      "hero.badge.verify.v": "PAID ✅ — 27.27 of 27.27 USDC",
+      "hero.badge.remind.k": "reminder armed",
+      "hero.badge.remind.v": "pings you when 412 gets paid",
 
       /* ---------- chat mock ---------- */
       "chat.status": "online · Telegram",
@@ -639,4 +649,94 @@
       }
     });
   });
+
+  /* ============================================================
+     Hero device — soft 3D tilt that follows the pointer.
+     Plain requestAnimationFrame + linear interpolation, no library.
+     It stays OFF when any of these is true:
+       · prefers-reduced-motion: reduce
+       · the pointer is coarse / hover is unavailable (touch)
+       · the viewport is below the two-column breakpoint (980px)
+     All three are live: rotating a tablet or flipping the OS motion
+     setting flips the effect without a reload. The loop parks itself
+     as soon as the transform has settled — no idle rAF burn.
+     ============================================================ */
+
+  (function () {
+    var device = document.querySelector("[data-tilt]");
+    if (!device || !window.matchMedia || !window.requestAnimationFrame) return;
+
+    var BASE = "perspective(1200px)";
+    var MAX_Y = 9;      /* degrees around the vertical axis */
+    var MAX_X = 6;      /* degrees around the horizontal axis */
+    var EASE = 0.075;   /* lerp factor per frame */
+
+    var mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var mqPointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    var mqWide = window.matchMedia("(min-width: 980px)");
+
+    var targetX = 0, targetY = 0, curX = 0, curY = 0;
+    var frame = null;
+    var enabled = false;
+
+    function render() {
+      frame = null;
+      curX += (targetX - curX) * EASE;
+      curY += (targetY - curY) * EASE;
+
+      if (Math.abs(targetX - curX) < 0.01 && Math.abs(targetY - curY) < 0.01) {
+        curX = targetX;
+        curY = targetY;
+      } else {
+        frame = window.requestAnimationFrame(render);
+      }
+
+      device.style.transform =
+        BASE + " rotateX(" + curX.toFixed(3) + "deg) rotateY(" + curY.toFixed(3) + "deg)";
+    }
+
+    function schedule() {
+      if (frame === null) frame = window.requestAnimationFrame(render);
+    }
+
+    function onMove(event) {
+      var w = window.innerWidth || 1;
+      var h = window.innerHeight || 1;
+      targetY = ((event.clientX / w) * 2 - 1) * MAX_Y;
+      targetX = (1 - (event.clientY / h) * 2) * MAX_X;
+      schedule();
+    }
+
+    function setEnabled(on) {
+      if (on === enabled) return;
+      enabled = on;
+
+      if (on) {
+        window.addEventListener("mousemove", onMove, { passive: true });
+        return;
+      }
+
+      window.removeEventListener("mousemove", onMove);
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+        frame = null;
+      }
+      targetX = targetY = curX = curY = 0;
+      device.style.transform = BASE;   /* snap flat, never animate back */
+    }
+
+    function evaluate() {
+      setEnabled(!mqMotion.matches && mqPointer.matches && mqWide.matches);
+    }
+
+    function watch(mq) {
+      if (mq.addEventListener) mq.addEventListener("change", evaluate);
+      else if (mq.addListener) mq.addListener(evaluate);
+    }
+
+    watch(mqMotion);
+    watch(mqPointer);
+    watch(mqWide);
+    evaluate();
+  })();
 })();

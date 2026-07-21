@@ -115,6 +115,22 @@
       </div>
 
       <div class="hero__chat">
+       <div class="stage">
+        <div class="stage__glow" aria-hidden="true"></div>
+
+        <!-- the device is chrome, not content: everything inside it is the same
+             Telegram mock as before, unchanged in wording -->
+        <div class="device" data-tilt>
+          <span class="device__btn device__btn--silent" aria-hidden="true"></span>
+          <span class="device__btn device__btn--volup" aria-hidden="true"></span>
+          <span class="device__btn device__btn--voldn" aria-hidden="true"></span>
+          <span class="device__btn device__btn--power" aria-hidden="true"></span>
+
+          <div class="device__screen">
+            <div class="device__island" aria-hidden="true">
+              <span class="device__live"></span>
+            </div>
+
         <div class="chat">
           <div class="chat__bar">
             <span class="chat__avatar" aria-hidden="true">
@@ -131,7 +147,7 @@
             <span class="chat__tag" aria-hidden="true">#412</span>
           </div>
 
-          <div class="chat__body">
+          <div class="chat__body" tabindex="0" role="group" aria-label="Tela do aparelho — conversa do Telegram, rolável" data-i18n-aria="a11y.screen">
 
             <div class="msg msg--out">
               <p data-i18n="chat.merchant">Cobra R$ 150 do João, pedido 412</p>
@@ -193,6 +209,31 @@
 
           </div>
         </div>
+
+            <span class="device__glare" aria-hidden="true"></span>
+            <span class="device__home" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <!-- two floating glass badges: each states a fact the page already
+             proves elsewhere — nothing invented, no metrics -->
+        <div class="stage__badges">
+          <p class="gbadge gbadge--verify">
+            <span class="gbadge__k">
+              <span class="gbadge__dot gbadge__dot--sol" aria-hidden="true"></span>
+              <span data-i18n="hero.badge.verify.k">valor conferido on-chain</span>
+            </span>
+            <span class="gbadge__v" data-i18n="hero.badge.verify.v">PAID ✅ — 27,27 de 27,27 USDC</span>
+          </p>
+          <p class="gbadge gbadge--remind">
+            <span class="gbadge__k">
+              <span class="gbadge__dot gbadge__dot--zc" aria-hidden="true"></span>
+              <span data-i18n="hero.badge.remind.k">lembrete ativo</span>
+            </span>
+            <span class="gbadge__v" data-i18n="hero.badge.remind.v">avisa quando a 412 pagar</span>
+          </p>
+        </div>
+       </div>
       </div>
     </div>
   </section>
