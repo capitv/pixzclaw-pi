@@ -38,3 +38,23 @@ wit/                       # ZeroClaw WIT contract
 ## License
 
 Plugin code: MIT. ZeroClaw is built from upstream at CI time (their license).
+
+## Enable GitHub Actions (one-time)
+
+The GitHub token used for automation lacks the `workflow` scope, so the
+workflow file lives at [`ci/build-pi.yml`](./ci/build-pi.yml).
+
+**You (or re-auth with workflow scope):** copy it into Actions:
+
+1. Open https://github.com/capitv/pixzclaw-pi
+2. Add file ? Create new file ? path: `.github/workflows/build-pi.yml`
+3. Paste contents of `ci/build-pi.yml` ? Commit
+4. Actions ? **build-pi** ? Run workflow
+
+Or locally after `gh auth refresh -s workflow,repo`:
+
+```bash
+mkdir -p .github/workflows
+cp ci/build-pi.yml .github/workflows/build-pi.yml
+git add .github/workflows/build-pi.yml && git commit -m "ci: enable build-pi" && git push
+```
