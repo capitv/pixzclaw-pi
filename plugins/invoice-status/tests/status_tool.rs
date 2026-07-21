@@ -265,6 +265,13 @@ fn fetch_and_status_end_to_end_paid() {
     let s = fetch_and_status(&req, &cfg, http).unwrap();
     assert!(s.contains("USDC: PAID ✅"), "{s}");
     assert!(s.contains("RECIBO"), "{s}");
+    // Settled → the tool tells the agent to tear down any cron watcher.
+    let last = s.lines().last().unwrap();
+    assert!(
+        last.starts_with("[sistema]") && last.contains("cron_remove"),
+        "cron teardown must be the last line:\n{s}"
+    );
+    assert!(s.find("RECIBO").unwrap() < s.find("[sistema]").unwrap(), "{s}");
 }
 
 #[test]
@@ -294,6 +301,8 @@ fn fetch_and_status_end_to_end_underpaid() {
     let s = fetch_and_status(&verified_req(Some("90")), &cfg, http).unwrap();
     assert!(s.contains("USDC: UNDERPAID ⚠️"), "{s}");
     assert!(!s.contains("USDC: PAID ✅"), "{s}");
+    // Not settled → the cron watcher must keep running.
+    assert!(!s.contains("cron_remove"), "{s}");
 }
 
 /// Mock transport that answers `getTransaction` per signature so multi-payment

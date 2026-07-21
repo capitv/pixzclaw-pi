@@ -214,8 +214,20 @@ pub fn status_from_signatures_verified(
         out.push('\n');
         out.push_str(&rc);
     }
+    // Settled with a confirmed amount → tell the agent to stop any watcher.
+    // Never emitted on PENDING / UNDERPAID / SIG OK: the reminder must keep
+    // running until the value is actually confirmed.
+    if usdc_confirmed {
+        out.push('\n');
+        out.push_str(SETTLED_CRON_HINT);
+    }
     out
 }
+
+/// Agent-facing instruction appended after the shareable receipt when the
+/// invoice is settled with a confirmed amount. Always the last line, outside
+/// the receipt block.
+pub const SETTLED_CRON_HINT: &str = "[sistema] Fatura liquidada: se existir um lembrete cron desta fatura, remova-o (cron_remove) e não agende novos.";
 
 /// Build the shareable PT-BR receipt block for a confirmed USDC payment.
 fn build_receipt(
@@ -421,6 +433,70 @@ mod tests {
             "inv-1", "Ref", &[], None, Some("90"), false,
         );
         assert!(s.contains("USDC: PENDING (nenhuma assinatura"), "{s}");
+    }
+
+    /// Paid-with-confirmed-value cases must end with the cron-teardown line,
+    /// after (and outside) the shareable receipt.
+    #[test]
+    fn settled_cron_hint_on_paid_overpaid_and_recebido() {
+        let sigs = vec![sig("SigPaid", true, None)];
+        let cases = [
+            ("PAID", recv(27.27), Some("27.27")),
+            ("OVERPAID", recv(120.0), Some("100")),
+            ("RECEBIDO", recv(42.5), None),
+        ];
+        for (name, verified, expected) in cases {
+            let s = status_from_signatures_verified(
+                "inv-1", "Ref", &sigs, verified, expected, false,
+            );
+            let last = s.lines().last().unwrap();
+            assert_eq!(last, SETTLED_CRON_HINT, "{name}: {s}");
+            assert!(last.starts_with("[sistema]"), "{name}");
+            assert!(last.contains("cron_remove"), "{name}");
+            assert_eq!(s.matches("[sistema]").count(), 1, "{name}: {s}");
+            // Receipt still intact and *before* the system line.
+            let rc = s.find("🧾 RECIBO").unwrap_or_else(|| panic!("{name}: {s}"));
+            assert!(rc < s.find(SETTLED_CRON_HINT).unwrap(), "{name}: {s}");
+            assert!(s.contains("Encaminhe esta mensagem ao cliente"), "{name}");
+        }
+    }
+
+    /// Not settled (or value unconfirmed) → the watcher must keep running.
+    #[test]
+    fn no_settled_cron_hint_when_not_confirmed() {
+        let sigs = vec![sig("Sig", true, None)];
+        let cases = [
+            // (label, sigs, verified, expected)
+            ("PENDING empty", &[][..], None, Some("90")),
+            ("PENDING zero", &sigs[..], recv(0.0), Some("90")),
+            ("UNDERPAID", &sigs[..], recv(0.01), Some("90")),
+            ("SIG OK", &sigs[..], None, Some("90")),
+        ];
+        for (name, s_in, verified, expected) in cases {
+            let s = status_from_signatures_verified(
+                "inv-1", "Ref", s_in, verified, expected, false,
+            );
+            assert!(!s.contains("cron_remove"), "{name}: {s}");
+            assert!(!s.contains("[sistema]"), "{name}: {s}");
+            assert!(!s.contains("Fatura liquidada"), "{name}: {s}");
+        }
+    }
+
+    /// PIX marked + USDC confirmed still ends with the teardown line.
+    #[test]
+    fn settled_cron_hint_with_pix_marked() {
+        let sigs = vec![sig("Sig", true, None)];
+        let s =
+            status_from_signatures_verified("inv-9", "Ref", &sigs, recv(10.0), Some("10"), true);
+        assert_eq!(s.lines().last().unwrap(), SETTLED_CRON_HINT, "{s}");
+    }
+
+    /// The non-verified legacy shaper never emits the teardown line.
+    #[test]
+    fn legacy_shaper_has_no_cron_hint() {
+        let sigs = vec![sig("Sig", true, None)];
+        let s = status_from_signatures("inv-1", "Ref", &sigs, Some("10"), false);
+        assert!(!s.contains("cron_remove"), "{s}");
     }
 
     #[test]

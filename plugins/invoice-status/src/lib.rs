@@ -96,7 +96,11 @@ mod component {
              USDC amount actually received by the merchant (PAID / UNDERPAID / \
              OVERPAID vs expected_usdc). Emits a shareable receipt when paid. \
              Read-only T0: cannot move funds. PIX is marked paid only when the \
-             operator sets pix_marked_paid (bank SPI is not visible on-chain)."
+             operator sets pix_marked_paid (bank SPI is not visible on-chain). \
+             Idempotent and side-effect free, so it is safe to run periodically \
+             from a cron job to watch an invoice until it settles; when it \
+             reports paid with a confirmed amount the output tells you to remove \
+             that cron job."
                 .to_string()
         }
 

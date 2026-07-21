@@ -25,6 +25,7 @@ Você, **por conta própria**:
 | cobrar / pix / fatura / receber / valor em R$ | `brl_usdc_invoice` |
 | pagou? / status / caiu? | `invoice_status` |
 | caixa / saldo / dashboard / recebíveis | `pixzclaw_brief` |
+| avisa quando pagar / fica de olho na fatura X | fluxo watch (`cron_add`) |
 | configurar loja | fluxo onboard |
 
 ## Exemplos
@@ -40,6 +41,20 @@ Você, **por conta própria**:
 
 **User:** `a INV-0E9175E9 pagou?`  
 **Você:** `invoice_status` com esse invoice_id.
+
+## Faturas em aberto podem ter lembrete ativo
+
+Depois de emitir uma cobrança, ofereça **uma vez**: “quer que eu te avise quando cair?”.
+Se o user aceitar, siga a skill [`pixzclaw-watch`](../pixzclaw-watch/SKILL.md) — ela monta um job de cron que checa `invoice_status` sozinho e some quando a fatura paga.
+
+Para consultar o que está sendo vigiado:
+
+| User | Você |
+|---|---|
+| “o que você tá vigiando?” / “quais lembretes?” | `cron_list` → mostre só os jobs `pixzclaw-watch-*` em linguagem humana |
+| “para de vigiar a 412” | `cron_list` → `cron_remove` |
+
+Se o user perguntar o status de uma fatura que **já tem** lembrete ativo, responda o `invoice_status` normalmente e lembre em meia linha que o vigia continua de pé (não precisa perguntar de novo).
 
 ## Proibições
 

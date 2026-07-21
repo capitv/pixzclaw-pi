@@ -94,6 +94,33 @@ fn auto_invoice_id_when_omitted() {
 }
 
 #[test]
+fn watch_hint_line_on_by_default_and_off_by_config() {
+    // Default (key absent) → merchant-only reminder CTA with the real id.
+    let out = execute_invoice(&args_json("150.00", "inv-412", &base_config())).unwrap();
+    let line = out
+        .lines()
+        .find(|l| l.starts_with("🔔"))
+        .unwrap_or_else(|| panic!("watch line missing:\n{out}"));
+    assert!(line.contains("(só pra você)"), "{line}");
+    assert!(line.contains("avisa quando a inv-412 pagar"), "{line}");
+    // Stays out of the anti-redact system line, which remains last.
+    let last = out.lines().last().unwrap();
+    assert!(last.starts_with("[sistema]") && last.contains("redact"), "{last}");
+
+    // watch_hint=false → line disappears entirely.
+    let mut cfg = base_config();
+    cfg.insert("watch_hint".into(), "false".into());
+    let off = execute_invoice(&args_json("150.00", "inv-412", &cfg)).unwrap();
+    assert!(!off.contains('🔔'), "watch line must vanish:\n{off}");
+    assert!(off.contains("api.qrserver.com"), "card otherwise intact:\n{off}");
+
+    // Explicit truthy value keeps it on.
+    cfg.insert("watch_hint".into(), "yes".into());
+    let on = execute_invoice(&args_json("150.00", "inv-412", &cfg)).unwrap();
+    assert!(on.contains("avisa quando a inv-412 pagar"), "{on}");
+}
+
+#[test]
 fn invalid_json_fails() {
     assert!(execute_invoice("not-json").unwrap_err().contains("invalid arguments"));
 }

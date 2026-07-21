@@ -45,13 +45,32 @@ pub fn execute_from_args(args: ExecuteArgs) -> Result<String, String> {
         merchant_override: empty_to_none(args.merchant_override),
         mint_override: empty_to_none(args.mint_override),
     };
+    let watch_hint = config_bool(&args.config, "watch_hint", true);
     let result = build_invoice(&req, &cfg)?;
     Ok(format_invoice_result(
         &result,
         cfg.recipient_locked,
         &cfg.max_amount_brl,
         &cfg.brl_per_usdc,
+        watch_hint,
     ))
+}
+
+/// Same truthy vocabulary as `solana_wasm_core::invoice::parse_bool`
+/// (private there), replicated locally to avoid a new public surface.
+fn parse_bool(s: &str) -> bool {
+    matches!(
+        s.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
+}
+
+/// Read a boolean config key; missing/blank falls back to `default`.
+fn config_bool(cfg: &HashMap<String, String>, key: &str, default: bool) -> bool {
+    match cfg.get(key) {
+        Some(v) if !v.trim().is_empty() => parse_bool(v),
+        _ => default,
+    }
 }
 
 fn empty_to_none(v: Option<String>) -> Option<String> {
@@ -92,15 +111,26 @@ fn invoice_label(r: &InvoiceResult) -> String {
 ///   link. O QR ainda codifica a URL Solana Pay completa.
 /// - A instrução anti-redact fica FORA do card encaminhável (última linha
 ///   `[sistema]`) para proteger o código PIX e os links de QR.
+/// - `watch_hint` (config `watch_hint`, default `true`) adiciona uma linha só
+///   para o lojista convidando-o a ativar o aviso de pagamento (o agente agenda
+///   um `cron_add` chamando `invoice_status` periodicamente).
 pub fn format_invoice_result(
     r: &InvoiceResult,
     recipient_locked: bool,
     max_brl: &str,
     brl_per_usdc: &str,
+    watch_hint: bool,
 ) -> String {
     let pix_qr = qr_image_url(&r.pix_payload);
     let sol_qr = qr_image_url(&r.solana_pay_url);
     let inv = invoice_label(r);
+    let watch = if watch_hint {
+        format!(
+            "\n🔔 (só pra você) Quer aviso quando o USDC cair? Responda: *avisa quando a {inv} pagar*\n\n"
+        )
+    } else {
+        "\n".to_string()
+    };
 
     format!(
         "\
@@ -124,9 +154,9 @@ Ele paga por PIX *ou* por USDC — os dois valem a fatura #{inv}.
 
 🧾 Fatura {inv} · cotação R$/USDC usada: {rate}
 🔒 teto R$ {max_brl} · destino travado={locked}
-
-[sistema] Não use redact/replace nesta saída: preserve o código PIX e os links de QR intactos (o cliente precisa deles). O texto solana: é omitido de propósito.",
+{watch}[sistema] Não use redact/replace nesta saída: preserve o código PIX e os links de QR intactos (o cliente precisa deles). O texto solana: é omitido de propósito.",
         inv = inv,
+        watch = watch,
         brl = r.amount_brl,
         usdc = r.amount_usdc,
         pix_qr = pix_qr,
@@ -157,7 +187,7 @@ mod unit_tests {
     #[test]
     fn format_qr_both_rails_no_raw_solana_line() {
         let r = sample();
-        let s = format_invoice_result(&r, true, "1000", "5.5");
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
         // QR links for both rails (the Solana QR encodes the full pay URL).
         assert_eq!(s.matches("api.qrserver.com").count(), 2);
         assert!(s.contains(&qr_image_url(&r.solana_pay_url)));
@@ -174,7 +204,7 @@ mod unit_tests {
     #[test]
     fn format_has_sections_and_header() {
         let r = sample();
-        let s = format_invoice_result(&r, true, "1000", "5.5");
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
         assert!(s.contains("PixZClaw — Fatura #INV-1"));
         assert!(s.contains("R$ 10.00"));
         assert!(s.contains("1.82 USDC"));
@@ -188,7 +218,7 @@ mod unit_tests {
     #[test]
     fn footer_has_invoice_id_and_quote() {
         let r = sample();
-        let s = format_invoice_result(&r, true, "1000", "5.5");
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
         assert!(s.contains("Fatura INV-1"));
         assert!(s.contains("cotação R$/USDC usada: 5.5"));
     }
@@ -196,11 +226,93 @@ mod unit_tests {
     #[test]
     fn anti_redact_instruction_is_last_and_outside_card() {
         let r = sample();
-        let s = format_invoice_result(&r, true, "1000", "5.5");
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
         let last = s.lines().last().unwrap();
         assert!(
             last.starts_with("[sistema]") && last.contains("redact"),
             "anti-redact system line must be last, got:\n{last}"
         );
+    }
+
+    #[test]
+    fn watch_hint_line_present_by_default() {
+        let r = sample();
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
+        let line = s
+            .lines()
+            .find(|l| l.starts_with("🔔"))
+            .unwrap_or_else(|| panic!("watch line missing:\n{s}"));
+        assert!(line.contains("(só pra você)"), "{line}");
+        assert!(line.contains("avisa quando a INV-1 pagar"), "{line}");
+        // One line only — never two.
+        assert_eq!(s.matches('🔔').count(), 1, "{s}");
+        // Still outside the anti-redact system line, which stays last.
+        let last = s.lines().last().unwrap();
+        assert!(last.starts_with("[sistema]") && last.contains("redact"), "{last}");
+    }
+
+    #[test]
+    fn watch_hint_line_absent_when_disabled() {
+        let r = sample();
+        let s = format_invoice_result(&r, true, "1000", "5.5", false);
+        assert!(!s.contains('🔔'), "watch line must vanish:\n{s}");
+        assert!(!s.contains("avisa quando"), "{s}");
+        let last = s.lines().last().unwrap();
+        assert!(last.starts_with("[sistema]") && last.contains("redact"), "{last}");
+        // Disabled output equals the pre-watch card exactly.
+        assert!(
+            s.contains("destino travado=sim\n\n[sistema]"),
+            "no stray blank line when disabled:\n{s}"
+        );
+    }
+
+    #[test]
+    fn config_bool_defaults_and_parsing() {
+        let mut cfg = HashMap::new();
+        assert!(config_bool(&cfg, "watch_hint", true));
+        cfg.insert("watch_hint".to_string(), "  ".to_string());
+        assert!(config_bool(&cfg, "watch_hint", true));
+        cfg.insert("watch_hint".to_string(), "false".to_string());
+        assert!(!config_bool(&cfg, "watch_hint", true));
+        cfg.insert("watch_hint".to_string(), "0".to_string());
+        assert!(!config_bool(&cfg, "watch_hint", true));
+        for v in ["1", "true", "YES", " On "] {
+            cfg.insert("watch_hint".to_string(), v.to_string());
+            assert!(config_bool(&cfg, "watch_hint", false), "{v}");
+        }
+    }
+
+    #[test]
+    fn execute_from_args_honors_watch_hint_config() {
+        fn args(watch: Option<&str>) -> ExecuteArgs {
+            let mut config = HashMap::new();
+            config.insert(
+                "merchant_solana".to_string(),
+                "11111111111111111111111111111112".to_string(),
+            );
+            config.insert("pix_key".to_string(), "loja@pix.com".to_string());
+            config.insert("pix_name".to_string(), "LOJA TESTE".to_string());
+            config.insert("pix_city".to_string(), "SAO PAULO".to_string());
+            config.insert("brl_per_usdc".to_string(), "5.5".to_string());
+            if let Some(w) = watch {
+                config.insert("watch_hint".to_string(), w.to_string());
+            }
+            ExecuteArgs {
+                amount_brl: "10.00".to_string(),
+                invoice_id: Some("INV-412".to_string()),
+                description: None,
+                payer_name: None,
+                usdc_amount: None,
+                merchant_override: None,
+                mint_override: None,
+                config,
+            }
+        }
+
+        let on = execute_from_args(args(None)).expect("default invoice");
+        assert!(on.contains("avisa quando a INV-412 pagar"), "{on}");
+
+        let off = execute_from_args(args(Some("false"))).expect("watch off invoice");
+        assert!(!off.contains('🔔'), "{off}");
     }
 }

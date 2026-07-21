@@ -55,6 +55,7 @@ Skills em `skills/`:
 |---|---|
 | `pixzclaw-onboard` | `/configurar` — coleta dados e gera `config set` |
 | `pixzclaw-daily` | cobrança / status / caixa no dia a dia |
+| `pixzclaw-watch` | “avisa quando a X pagar” — lembrete automático via cron |
 
 ### Instalar skills no ZeroClaw
 
@@ -64,7 +65,7 @@ ZeroClaw carrega skills do workspace / plugins dir (varia por versão). Opções
 
 ```bash
 mkdir -p ~/.zeroclaw/workspace/skills
-cp -r ~/skills/pixzclaw-onboard ~/skills/pixzclaw-daily ~/.zeroclaw/workspace/skills/ 2>/dev/null || true
+cp -r ~/skills/pixzclaw-onboard ~/skills/pixzclaw-daily ~/skills/pixzclaw-watch ~/.zeroclaw/workspace/skills/ 2>/dev/null || true
 # se você clonou o repo:
 # cp -r ~/pixzclaw-pi/skills/* ~/.zeroclaw/workspace/skills/
 ```
@@ -98,7 +99,41 @@ Cobra R$ 25 invoice demo-1 café
 
 demo-1 pagou?
 → invoice_status
+
+avisa quando a demo-1 pagar
+→ cron_add (ver seção abaixo)
 ```
+
+## Lembrete automático de pagamento
+
+O lojista não precisa ficar perguntando “pagou?”. O agente agenda um vigia no **cron nativo do ZeroClaw** (skill `pixzclaw-watch`).
+
+### Fluxo em 3 passos
+
+1. **Pedir** — no Telegram: `avisa quando a INV-0E9175E9 pagar` (ou tocar no CTA que a fatura sugere).
+2. **Agendar** — o agente chama `cron_add` sozinho: job `agent`, sessão `isolated`, `{"kind":"every","every_ms":300000}` (5 min), allowlist `["invoice_status","cron_remove"]`, entrega `announce` no Telegram. Nome do job: `pixzclaw-watch-<invoice_id>`.
+3. **Avisar e sumir** — a cada tick o job chama `invoice_status` **em silêncio**; só fala quando o USDC cai (manda o recibo) e então se apaga sozinho com `cron_remove`. PENDING nunca gera mensagem.
+
+### Como cancelar / gerenciar
+
+```text
+quais lembretes eu tenho?   → cron_list
+para de vigiar a 412        → cron_list + cron_remove
+muda pra 10 em 10 minutos   → cron_update
+```
+
+Ou direto no Pi:
+
+```bash
+zeroclaw cron list
+zeroclaw cron remove pixzclaw-watch-INV-0E9175E9
+```
+
+### Requisitos
+
+- O **serviço/daemon precisa estar rodando** (`zeroclaw service status`). Em host só-gateway o job fica gravado mas não dispara.
+- Intervalo mínimo: **60000 ms** (1 min). Padrão recomendado: 5 min.
+- Sugestão de teto: até **5 lembretes ativos** por lojista.
 
 ## Segurança do onboarding
 

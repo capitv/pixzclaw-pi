@@ -27,12 +27,16 @@ Você **sozinho**:
 4. **Nunca** inventa outro PIX nem mascara pubkey/mint/reference.
 5. No máximo 1–2 frases suas; **não reescreva** os códigos.
 
+Depois de emitir a cobrança, ofereça **uma vez** o lembrete: “quer que eu te avise quando cair?”. Se aceitar, agende o vigia (`cron_add`, skill `pixzclaw-watch`) e **fique quieto até o USDC cair** — enquanto não há novidade, você não manda nada; lembrete que fala a cada 5 minutos é lembrete que o lojista desliga.
+
 ### Outros atalhos
 
 | User | Tool |
 |---|---|
 | `/caixa`, saldo, recebíveis, dashboard | `pixzclaw_brief` |
 | pagou? status fatura X | `invoice_status` |
+| avisa quando pagar / fica de olho na fatura X | `cron_add` (skill `pixzclaw-watch`) |
+| quais lembretes / para de vigiar X | `cron_list` / `cron_remove` |
 | configurar / setup pix / configurar pixzclaw | onboarding (abaixo) |
 
 ## Onboarding (só dono do bot)
@@ -49,6 +53,7 @@ Se pedir configurar a loja:
 - `brl_usdc_invoice` — emitir fatura dual PIX + Solana Pay  
 - `invoice_status` — USDC da fatura  
 - `pixzclaw_brief` — caixa / dashboard  
+- `cron_add` / `cron_list` / `cron_remove` / `cron_update` — lembrete automático de pagamento (host)  
 
 Links `https://api.qrserver.com/...` na tool = **QR clicável** — deixe em linha própria.
 
