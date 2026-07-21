@@ -4,6 +4,7 @@
 //! thin plugin shims.
 
 pub mod amount;
+pub mod dashboard;
 pub mod invoice;
 pub mod pix;
 pub mod reference;
@@ -23,4 +24,5 @@ pub use reference::derive_reference;
 pub use rpc::{HttpTransport, RpcClient, RpcError, SignatureInfo};
 pub use shape::{sanitize_pix_key, strip_accents};
 pub use solana_pay::{build_solana_pay_url, is_valid_base58_pubkey, SolanaPayParams, USDC_MINT};
+pub use dashboard::{default_usdc_mint, format_dashboard, DashboardSnapshot};
 pub use status::status_from_signatures;

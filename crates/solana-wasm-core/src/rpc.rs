@@ -91,6 +91,93 @@ impl<T: HttpTransport> RpcClient<T> {
         }
         Ok(out)
     }
+
+    /// Call `getBalance` — returns lamports for a system account.
+    pub fn get_balance(&self, address: &str) -> Result<u64, RpcError> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getBalance",
+            "params": [address]
+        });
+        let resp = self.http.post_json(&self.endpoint, &body)?;
+        Self::rpc_result(&resp)?;
+        resp.get("result")
+            .and_then(|r| r.get("value"))
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| RpcError::new("getBalance: missing result.value"))
+    }
+
+    /// Sum UI amounts of SPL token accounts for `owner` filtered by `mint`
+    /// using `getTokenAccountsByOwner` + `jsonParsed`.
+    pub fn get_token_ui_balance(&self, owner: &str, mint: &str) -> Result<String, RpcError> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getTokenAccountsByOwner",
+            "params": [
+                owner,
+                { "mint": mint },
+                { "encoding": "jsonParsed" }
+            ]
+        });
+        let resp = self.http.post_json(&self.endpoint, &body)?;
+        Self::rpc_result(&resp)?;
+        let arr = resp
+            .get("result")
+            .and_then(|r| r.get("value"))
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| RpcError::new("getTokenAccountsByOwner: missing result.value"))?;
+
+        let mut total: f64 = 0.0;
+        let mut found = false;
+        for item in arr {
+            if let Some(ui) = item
+                .pointer("/account/data/parsed/info/tokenAmount/uiAmount")
+                .and_then(|v| v.as_f64())
+            {
+                total += ui;
+                found = true;
+            } else if let Some(s) = item
+                .pointer("/account/data/parsed/info/tokenAmount/uiAmountString")
+                .and_then(|v| v.as_str())
+            {
+                if let Ok(x) = s.parse::<f64>() {
+                    total += x;
+                    found = true;
+                }
+            }
+        }
+        if !found {
+            return Ok("0".to_string());
+        }
+        // Trim trailing zeros for display
+        let s = format!("{total:.6}");
+        Ok(trim_trailing_zeros(&s))
+    }
+
+    fn rpc_result(resp: &Value) -> Result<(), RpcError> {
+        if let Some(err) = resp.get("error") {
+            let msg = err
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("unknown rpc error");
+            return Err(RpcError::new(msg));
+        }
+        Ok(())
+    }
+}
+
+fn trim_trailing_zeros(s: &str) -> String {
+    if !s.contains('.') {
+        return s.to_string();
+    }
+    let t = s.trim_end_matches('0').trim_end_matches('.');
+    if t.is_empty() {
+        "0".into()
+    } else {
+        t.to_string()
+    }
 }
 
 /// Compact signature info returned by `getSignaturesForAddress`.
