@@ -159,6 +159,43 @@ Memo: `PIX|BRL|<invoice_id>|<short>`
     UNDERPAID avisa e encerra (sessão cron é isolada, sem memória).
     101 testes host.
 
+12. **Verificação endurecida** (2026-07-22, commit `7b69a73`, ainda sem
+    release): três furos que faziam o veredito mentir, achados por
+    auditoria adversarial Fable e fechados por time Opus.
+    - **Spam mascarava pagamento:** `status_tool.rs` varria só as 5
+      assinaturas bem-sucedidas mais recentes. Seis txs de poeira
+      tocando a reference empurravam o pagamento real pra fora →
+      fatura paga respondia `PENDING`. Custo do ataque: 6 taxas.
+      Agora varre **todas** as assinaturas do lookback, com parada
+      antecipada quando cobre, teto 64, e as que passam do teto são
+      **contadas como não-varridas**.
+      → `received_units` é um **limite inferior** explícito quando a
+      varredura é parcial. Limite inferior confirma pagamento que já
+      cobre, mas **nunca** afirma falta. Varredura incompleta que não
+      cobriu degrada pra `SIG OK`, não pra `UNDERPAID`.
+    - **Reuso de invoice_id → falso PAID:** `auto_invoice_id` era
+      `sha256(amount|description|merchant)`, sem tempo. Duas cobranças
+      de "R$ 10" em dias diferentes = mesmo id = mesma reference = o
+      pagamento de ontem liquidava a fatura de hoje, com recibo.
+      Reproduzível **sem atacante**. Agora salgado com o instante da
+      emissão, fornecido pelo shim (core continua puro), e **falha
+      fechado**: timestamp implausível recusa emitir id em vez de
+      emitir um que colide. Id explícito continua respeitado; READMEs
+      dizem que precisa ser único por venda. Derivação da reference
+      **não mudou** — o vídeo depende dela.
+    - **f64 com tolerância de 0,5%:** pagador podia mandar 0,5% a menos
+      e receber recibo de quitação (R$ 5 numa fatura de R$ 1.000), e a
+      soma era ponto flutuante justo na parte anunciada como
+      "verificação real" — enquanto a emissão já era `u128` exato.
+      Agora os dois lados são inteiros (`uiTokenAmount.amount` +
+      `decimals`), decimals divergentes entre txs **recusam** produzir
+      veredito, tolerância eliminada.
+    - Comentário, README e descrição da tool que afirmavam que a
+      varredura de 5 já protegia contra mascaramento: corrigidos.
+      Protegia contra 1 spam, não contra 6.
+    - **135 testes host** (83 core + 20 + 25 + 7), clippy limpo,
+      vendor sem drift, rustfmt limpo.
+
 **✅ PR upstream ABERTO (2026-07-21): [#123](https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123)**
 `feat(plugins): PixZClaw — dual-rail BRL PIX + Solana Pay USDC invoicing (T0/T1)`
 branch `feat/pixzclaw-dual-rail-brl-usdc`, state OPEN, não-draft.
@@ -266,6 +303,9 @@ demo-1 pagou? Use invoice_status.
 | PIX feio / inventado | LLM não usou tool | Forçar “use brl_usdc_invoice”; atualizar v0.3.0 |
 | Onboard não grava sozinho | Design | config set no Pi após chat |
 | Sessão mistura com outro uso | Um bot/agent só | Bot+agent `pixzclaw` separado |
+| `cargo build` falha `os error 4551` | Smart App Control (Windows) bloqueia proc-macro DLL | **Só afeta o alvo `wasm32-wasip2`.** `cargo test` e `cargo clippy` no host rodam normal — sempre teste antes de assumir bloqueio (custou 1h em 22/07) |
+| `git push` 403 em `origin` | `origin` = repo upstream deles | Push vai pro remote `fork` (`capitv/zeroclaw-plugins`); o PR sai do fork |
+| `cargo fmt --check` falha em plugin não tocado | CI só falha por fmt em plugin com `.rs` alterado; ressincronizar vendor arrasta o plugin pro portão | Rodar `cargo fmt` nos 3 workspaces. Reverter vendor pra evitar isso = publicar plugin com core bugado |
 
 ---
 
@@ -277,7 +317,8 @@ demo-1 pagou? Use invoice_status.
 4. Marca **PixZClaw**, emoji **🦞**  
 5. QR via URL pública (qrserver), não botões Telegram  
 6. Config no host jail, não `.env` do workspace  
-
+7. `crates/` e `tools/vendor-core.sh` **não vão no PR** — o upstream recebe só `plugins/`, autossuficiente pelo vendor. Impor um diretório na raiz da árvore do mantenedor é atrito desnecessário  
+8. Verificação **falha fechado**: em qualquer dúvida (RPC incompleto, decimals divergentes, relógio implausível) o sistema degrada e diz que não conferiu — nunca afirma PAID nem afirma falta  
 ---
 
 ## 8. Próximos passos recomendados (prioridade)
@@ -286,9 +327,9 @@ demo-1 pagou? Use invoice_status.
 2. **Desligar redact** no agent de cobrança  
 3. **Soul/system prompt** colar `skills/SOUL.md`  
 4. (Opcional) Agent/canal Telegram dedicado PixZClaw  
-5. **PR** para `zeroclaw-labs/zeroclaw-plugins` (3 plugins + core ou path dep documentado)  
-6. **Vídeo** ≤3 min (DEMO_SCRIPT.md)  
-7. **Submit** Superteam Earn  
+5. ~~**PR** para `zeroclaw-labs/zeroclaw-plugins`~~ — **feito**, PR #123 aberto  
+6. **Vídeo** ≤3 min — roteiro pronto em `pixzclaw-pi/VIDEO-SCRIPT.md` (11 planos, 2:56); falta **gravar**. Único bloqueio real da submissão  
+7. **Submit** Superteam Earn — deadline **06/08/2026 23:59 BRT**, `agentAccess: HUMAN_ONLY` (só o humano submete)  
 8. Roadmap only: on-ramp Transak/MoonPay; botões se host suportar  
 
 ---

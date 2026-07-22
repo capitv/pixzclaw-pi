@@ -534,7 +534,7 @@ Escaneie com Phantom/Solflare.
             <code class="tool__name">invoice_status</code>
           </div>
           <p class="tool__tag" data-i18n="tools.t2.tag">o juiz on-chain</p>
-          <p class="tool__desc" data-i18n="tools.t2.desc">Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code class="sol">pre/postTokenBalances</code>. Soma pagamentos parciais, nunca diz PAID sem valor conferido e gera um recibo compartilhável com link do Solscan.</p>
+          <p class="tool__desc" data-i18n="tools.t2.desc">Verifica o pagamento em USDC direto na blockchain: confere o valor que o lojista REALMENTE recebeu, pelo delta de <code class="sol">pre/postTokenBalances</code>. Aritmética inteira exata, sem faixa de tolerância. Varre todas as assinaturas da <em class="em-sol">reference</em>, soma pagamentos parciais e nunca diz PAID sem valor conferido. Gera recibo compartilhável com link do Solscan.</p>
           <ul class="verdicts">
             <li class="vd vd--paid"><b>PAID ✅</b><span data-i18n="tools.t2.v1">o valor bate</span></li>
             <li class="vd vd--under"><b>UNDERPAID ⚠️</b><span data-i18n="tools.t2.v2">diz exatamente quanto falta</span></li>
@@ -675,7 +675,7 @@ T0 read-only · sem chave · PixZClaw</code></pre>
         <li>
           <span class="trust__i" aria-hidden="true">02</span>
           <h3 data-i18n="trust.i2.title">Valor conferido on-chain</h3>
-          <p data-i18n="trust.i2.body">Nunca diz PAID sem checar quanto o lojista recebeu de verdade. Se o cliente pagar menos, marca UNDERPAID ⚠️ e mostra exatamente quanto falta.</p>
+          <p data-i18n="trust.i2.body">Nunca diz PAID sem checar quanto o lojista recebeu de verdade. Se o cliente pagar menos, marca UNDERPAID ⚠️ e mostra exatamente quanto falta. E se a varredura ficar incompleta — RPC limitou, rede caiu — ele se recusa a afirmar que faltou: dizer que falta sem ter olhado tudo é a mesma mentira do PAID sem conferir, virada do avesso.</p>
         </li>
         <li>
           <span class="trust__i" aria-hidden="true">03</span>
@@ -843,7 +843,7 @@ zeroclaw config set plugins.entries.pixzclaw-brief.config.rpc_url "https://api.m
         </details>
         <details class="faq__item">
           <summary data-i18n="faq.q2.q">E se o cliente pagar menos que o combinado?</summary>
-          <div class="faq__a"><p data-i18n="faq.q2.a">O <code>invoice_status</code> confere o valor recebido on-chain e responde UNDERPAID ⚠️, mostrando exatamente quanto ainda falta. Ele soma pagamentos parciais e só marca PAID quando o valor bate.</p></div>
+          <div class="faq__a"><p data-i18n="faq.q2.a">O <code>invoice_status</code> confere o valor recebido on-chain e responde UNDERPAID ⚠️, mostrando exatamente quanto ainda falta. Soma pagamentos parciais, compara em aritmética inteira exata (sem tolerância) e só marca PAID quando o valor bate.</p></div>
         </details>
         <details class="faq__item">
           <summary data-i18n="faq.q3.q">O PIX confirma sozinho?</summary>
