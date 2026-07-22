@@ -9,7 +9,7 @@ Custody **T0/T1 only** — the agent never signs anything and never sees a priva
 |---|---|
 | **Landing / setup guide** | https://capitv.github.io/pixzclaw-pi/ |
 | **Upstream PR** | [zeroclaw-labs/zeroclaw-plugins#123](https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123) |
-| **Release** | [`v0.5.0-plugins`](https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.0-plugins) |
+| **Release** | [`v0.5.1-plugins`](https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.1-plugins) |
 | **Runs on** | A Raspberry Pi 3B+ in production, Telegram bot live |
 
 ---
@@ -65,7 +65,7 @@ otherwise, and only a human operator can mark the PIX leg as received.
 ## Install on a host that already runs ZeroClaw
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/capitv/pixzclaw-pi/main/scripts/force-reinstall-plugins.sh | bash -s -- v0.5.0-plugins
+curl -fsSL https://raw.githubusercontent.com/capitv/pixzclaw-pi/main/scripts/force-reinstall-plugins.sh | bash -s -- v0.5.1-plugins
 ```
 
 Then configure and restart — full walkthrough on the

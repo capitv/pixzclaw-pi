@@ -4,13 +4,13 @@
   /* ============================================================
      Single source of truth for the shipped version.
      Bump it here and nowhere else: it is injected into
-       [data-version]      → "v0.5.0"        (brand chip, footer)
-       [data-version-tag]  → "v0.5.0-plugins" (inside the install command)
+       [data-version]      → "v0.5.1"        (brand chip, footer)
+       [data-version-tag]  → "v0.5.1-plugins" (inside the install command)
        [data-version-href] → href template, {tag} / {version}
        i18n strings        → the {version} placeholder
      ============================================================ */
 
-  var VERSION = "0.5.0";
+  var VERSION = "0.5.1";
   var VERSION_LABEL = "v" + VERSION;
   var PLUGIN_TAG = VERSION_LABEL + "-plugins";
 
