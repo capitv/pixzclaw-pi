@@ -22,7 +22,7 @@ Legenda da coluna **Fonte**: `PI` = terminal SSH no Raspberry Pi (desktop) · `T
 | 6 | 1:14–1:26 | TG | De volta ao Telegram. O lojista envia: `A INV-DEMO-A pagou? Use invoice_status com expected_usdc 10.` Aparece o indicador de "digitando". | **N6** |
 | 7 | 1:26–1:44 | TG | A resposta chega. Bloco visível **por inteiro** e parado na tela (ver §1.1 para o texto esperado, palavra por palavra). Ficar 4–5 s parado na linha `USDC: UNDERPAID ⚠️ …`. | **N7** |
 | 8 | 1:44–1:58 | WEB | Abrir no navegador do desktop o link `EXPLORER:` que o próprio plugin devolveu (Solscan). Mostrar a transação e o valor transferido: `1 USDC`. Zoom na linha de transferência. | **N8** |
-| 9 | 1:58–2:14 | PI | Terminal: `cat ~/.zeroclaw/plugins/invoice-status/manifest.toml`. Parar na linha de `permissions` (`config_read`, `http_client`) — ⟨CONFIRMAR: caminho instalado e nome exato do campo no manifest⟩. | **N9** |
+| 9 | 1:58–2:14 | PI | Terminal: `cat ~/plugins/invoice-status/manifest.toml`. Parar na linha `permissions = ["http_client", "config_read"]` — nessa ordem, com os dois comentários acima dela explicando cada uma. | **N9** |
 | 10 | 2:14–2:34 | TG | Telegram: `avisa quando a INV-DEMO-A pagar` → resposta do agente confirmando o vigia. Em seguida: `quais lembretes tenho?` → o agente lista `pixzclaw-watch-INV-DEMO-A`. | **N10** |
 | 11 | 2:34–2:56 | PI | Terminal, comando final já digitado: `zeroclaw plugin list` (volta ao plano de abertura, fecha o círculo). Cursor piscando no fim. Fade de áudio, corte seco no vídeo. | **N11** |
 
@@ -79,7 +79,7 @@ Ritmo de referência: **150 palavras/min = 2,5 palavras/s**. Cada bloco traz `pa
 > "Same transaction on Solscan: one USDC. It also refuses to bluff — if the RPC won't return the transaction, it degrades to signature-only and says the amount was not verified."
 
 > **N9** — 28 palavras → **11,2 s** (plano: 16 s)
-> "This is the whole permission surface of invoice_status: config read, and HTTP. Two JSON-RPC reads. No key, no signing path, no write to any chain. Custody tier zero."
+> "This is the whole permission surface of invoice_status: HTTP, and config read. Two JSON-RPC reads. No key, no signing path, no write to any chain. Custody tier zero."
 
 > **N10** — 43 palavras → **17,2 s** (plano: 20 s)
 > "Tell it to watch the invoice and the agent schedules a job on ZeroClaw's native cron, allowed to call two tools: invoice_status and cron_remove. While the invoice is pending it stays silent. When the value clears it sends the receipt and deletes itself."
@@ -120,7 +120,7 @@ Português rende ~15% mais sílabas por palavra que o inglês. Os tempos abaixo 
 > "A mesma transação no Solscan: um USDC. E ele também não blefa — se o RPC não devolver a transação, ele degrada para 'assinatura ok' e diz que o valor não foi conferido."
 
 > **N9 (PT)** — 28 palavras → **12,0 s** (plano: 16 s)
-> "Esta é a superfície de permissão inteira do invoice_status: leitura de config e HTTP. Duas leituras JSON-RPC. Sem chave, sem caminho de assinatura, sem escrita em chain nenhuma. Custódia tier zero."
+> "Esta é a superfície de permissão inteira do invoice_status: HTTP e leitura de config. Duas leituras JSON-RPC. Sem chave, sem caminho de assinatura, sem escrita em chain nenhuma. Custódia tier zero."
 
 > **N10 (PT)** — 45 palavras → **19,3 s** (plano: 20 s)
 > "Peça pra ele vigiar a fatura e o agente agenda um job no cron nativo do ZeroClaw, autorizado a chamar duas tools: invoice_status e cron_remove. Enquanto a fatura está pendente, ele fica em silêncio. Quando o valor cai, manda o recibo e se apaga."
@@ -162,7 +162,20 @@ O QR da própria fatura carrega `amount=10` e o Phantom **não deixa editar** o 
 5. Gere o QR dessa URL: `https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=8&data=<url percent-encoded>` e deixe aberto numa aba do desktop.
 6. No plano 5, escaneie esse QR com o scanner do Phantom (a gravação de tela do celular mostra o visor da câmera lendo a tela do desktop — não precisa de segunda câmera).
 
-⟨CONFIRMAR: método preferido para extrair a reference completa. A alternativa é rodar `derive_reference` no host a partir do `solana-wasm-core` — mais confiável, exige toolchain Rust no desktop.⟩
+**Como extrair a reference completa — resolvido.** Não copie do QR nem do chat (o
+host redacta base58 de alta entropia). Rode o verificador, que imprime a
+reference derivada antes de qualquer veredito:
+
+```bash
+cd examples/verify-live
+cargo run -- --merchant <merchant_solana> --invoice INV-DEMO-A --expected 10
+```
+
+Ele usa a mesma `derive_reference` do plugin, então a reference impressa é
+exatamente a que o `invoice_status` vai procurar. A saída já traz o link do
+Solscan também — útil para conferir, antes de gravar, que a conta ainda está
+zerada. Rodar de novo depois do pagamento confirma que o `UNDERPAID` do plano 7
+vai sair, sem depender do Telegram para descobrir.
 
 **Nota de honestidade:** isso é literalmente o que acontece quando um cliente paga menos do que a fatura pede. Não é encenação de resultado — a transação é real, o valor é real, e a verificação não sabe de nada disso.
 
