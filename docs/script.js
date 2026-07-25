@@ -254,7 +254,7 @@
       "faq.q6.a": "Ele usa o cron nativo do <b class=\"zc\">ZeroClaw</b>. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo. Está disponível desde a {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class=\"zc\">wasm32-wasip2</code> · 135 testes host · sem <code class=\"sol\">solana-sdk</code>.",
+      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class=\"zc\">wasm32-wasip2</code> · 139 testes host · sem <code class=\"sol\">solana-sdk</code>.",
       "footer.repo": "Repositório do PixZClaw",
       "footer.pr": "PR #123 · no repo oficial do ZeroClaw",
       "footer.release": "Release {version}",
@@ -496,7 +496,7 @@
       "faq.q6.a": "It uses <b class=\"zc\">ZeroClaw</b>'s native cron. The agent registers a job tied to the <code>invoice_id</code>, which calls <code>invoice_status</code> every 5 minutes, pings you on Telegram when the money lands — and then removes itself. It has shipped since {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code class=\"zc\">wasm32-wasip2</code> · 135 host tests · no <code class=\"sol\">solana-sdk</code>.",
+      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code class=\"zc\">wasm32-wasip2</code> · 139 host tests · no <code class=\"sol\">solana-sdk</code>.",
       "footer.repo": "PixZClaw repository",
       "footer.pr": "PR #123 · on ZeroClaw's official repo",
       "footer.release": "Release {version}",

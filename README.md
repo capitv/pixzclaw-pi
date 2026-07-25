@@ -138,7 +138,7 @@ that touches HTTP or the clock; the core is pure.
 cd plugins/invoice-status && cargo test
 ```
 
-135 tests across the core and the three plugins.
+139 tests across the core and the three plugins.
 
 ## Enable GitHub Actions (one-time)
 
