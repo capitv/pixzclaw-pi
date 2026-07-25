@@ -196,6 +196,41 @@ Memo: `PIX|BRL|<invoice_id>|<short>`
     - **135 testes host** (83 core + 20 + 25 + 7), clippy limpo,
       vendor sem drift, rustfmt limpo.
 
+13. **CI upstream rodada na mão + verificador sem Pi** (2026-07-25,
+    commits `42d8430` no repo do PR e `1f8d7bf` aqui):
+    - Rodei os jobs do `validate.yml` upstream localmente e **achei uma
+      falha real**: `git diff --check` contra a merge-base estava
+      **falhando**. Duas linhas do README do core vendorado tinham
+      espaço à direita (quebra dura markdown) e o `Cargo.toml` vendorado
+      terminava em linha em branco. A linha em branco **não era
+      escrita à mão**: `strip_workspace()` corta a seção `[workspace]`
+      e deixava para trás a linha em branco que a separava — todo
+      re-vendor reproduzia. Corrigido na **causa** (os dois
+      `vendor-core.sh` agora colapsam newlines finais para exatamente
+      uma), não no arquivo gerado.
+    - Plugins subiram para **0.3.1** no repo do PR, para o PR nomear os
+      bytes que estão de fato instalados e demonstrados, em vez de um
+      0.3.0 que não corresponde a artefato nenhum.
+    - **`examples/verify-live/`**: qualquer pessoa roda a verificação T0
+      contra a chain real, sem ZeroClaw, sem wasmtime, sem Pi. Chama
+      `invoice_status::status_tool::fetch_and_status` — a **mesma**
+      função que o componente wasm chama — trocando só o `HttpTransport`
+      injetado (`waki` sobre `wasi:http` no plugin, `curl` aqui). Sem
+      crate de HTTP/TLS de propósito: duas requisições não justificam
+      200 dependências, e os bytes ficam inspecionáveis. Imprime o
+      endereço que vai ler e o link do Solscan **antes** do veredito.
+      `--reference` aceita qualquer endereço que recebeu o mint, então
+      dá para exercitar a verificação de valor sem fatura PixZClaw.
+      Testado ao vivo contra a mainnet: RPC → assinaturas →
+      `getTransaction` → delta de saldo → veredito, tudo real.
+    - Comentário de evidência postado no PR #123
+      ([#issuecomment-5080143760](https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123#issuecomment-5080143760)),
+      com o que passou, o que não deu para rodar aqui (link wasm
+      bloqueado pelo Smart App Control) e por quê — dito explicitamente
+      em vez de omitido.
+    - Landing e rodapé diziam "101 testes host". O número real, contado,
+      é **135**. Corrigido nos dois idiomas.
+
 **✅ PR upstream ABERTO (2026-07-21): [#123](https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123)**
 `feat(plugins): PixZClaw — dual-rail BRL PIX + Solana Pay USDC invoicing (T0/T1)`
 branch `feat/pixzclaw-dual-rail-brl-usdc`, state OPEN, não-draft.
@@ -306,6 +341,9 @@ demo-1 pagou? Use invoice_status.
 | `cargo build` falha `os error 4551` | Smart App Control (Windows) bloqueia proc-macro DLL | **Só afeta o alvo `wasm32-wasip2`.** `cargo test` e `cargo clippy` no host rodam normal — sempre teste antes de assumir bloqueio (custou 1h em 22/07) |
 | `git push` 403 em `origin` | `origin` = repo upstream deles | Push vai pro remote `fork` (`capitv/zeroclaw-plugins`); o PR sai do fork |
 | `cargo fmt --check` falha em plugin não tocado | CI só falha por fmt em plugin com `.rs` alterado; ressincronizar vendor arrasta o plugin pro portão | Rodar `cargo fmt` nos 3 workspaces. Reverter vendor pra evitar isso = publicar plugin com core bugado |
+| **GitHub Actions não roda nada** (`The job was not started because your account is locked due to a billing issue`) | Conta `capitv` travada por cobrança — apareceu entre 22/07 e 25/07 | **Só o dono resolve**, em github.com/settings/billing. Trava tudo: build-pi, CI no fork, artefatos reproduzíveis. GitHub **Pages continua deployando** (infra separada), então a landing sobe normal |
+| `git diff --check` falha no CI upstream | `strip_workspace()` cortava `[workspace]` e deixava a linha em branco que a separava → linha em branco no EOF do `Cargo.toml` vendorado | Corrigido nos dois `vendor-core.sh` (colapsa newlines finais para uma). Rodar `git diff --check $(git merge-base origin/main HEAD) -- plugins/` **antes** de qualquer push pro PR |
+| `cargo test` de um plugin quebra com "trait não implementado" apontando pro **outro repo** | Reusar `CARGO_TARGET_DIR` de um plugin para compilar outra crate que depende de um `invoice-status` homônimo: dois pacotes de mesmo nome/versão colidem no fingerprint | `rm -rf target/debug/.fingerprint/<pkg>-* target/debug/deps/*<pkg>*`. Melhor: não compartilhar target dir entre repos |
 
 ---
 
@@ -319,6 +357,8 @@ demo-1 pagou? Use invoice_status.
 6. Config no host jail, não `.env` do workspace  
 7. `crates/` e `tools/vendor-core.sh` **não vão no PR** — o upstream recebe só `plugins/`, autossuficiente pelo vendor. Impor um diretório na raiz da árvore do mantenedor é atrito desnecessário  
 8. Verificação **falha fechado**: em qualquer dúvida (RPC incompleto, decimals divergentes, relógio implausível) o sistema degrada e diz que não conferiu — nunca afirma PAID nem afirma falta  
+9. **Toda afirmação forte da doc tem que ser executável.** O README afirmava três propriedades da verificação e não dava ao leitor jeito nenhum de conferir sem comprar um Raspberry Pi. `examples/verify-live` existe por isso. Se uma afirmação nova entrar na landing ou no README sem um comando que a exercite, ela é marketing, não prova  
+10. `examples/verify-live` **não vai no PR upstream** — depende de `plugins/invoice-status` por path e o snapshot da CI upstream copia um plugin por vez. Fica só em `pixzclaw-pi`, linkado do comentário do PR  
 ---
 
 ## 8. Próximos passos recomendados (prioridade)
@@ -330,7 +370,11 @@ demo-1 pagou? Use invoice_status.
 5. ~~**PR** para `zeroclaw-labs/zeroclaw-plugins`~~ — **feito**, PR #123 aberto  
 6. **Vídeo** ≤3 min — roteiro pronto em `pixzclaw-pi/VIDEO-SCRIPT.md` (11 planos, 2:56); falta **gravar**. Único bloqueio real da submissão  
 7. **Submit** Superteam Earn — deadline **06/08/2026 23:59 BRT**, `agentAccess: HUMAN_ONLY` (só o humano submete)  
-8. Roadmap only: on-ramp Transak/MoonPay; botões se host suportar  
+8. **Destravar a cobrança do GitHub** (github.com/settings/billing). Enquanto travado, nenhum job de Actions roda em nenhum repo. Sem isso não dá pra: sincronizar o workflow defasado, rodar a CI dos 3 plugins, nem republicar os assets da release como artefatos reproduzíveis de CI. Não bloqueia a gravação nem a submissão — os artefatos publicados foram verificados byte-a-byte contra as fontes do PR  
+9. Depois de destravar: `gh auth refresh -s workflow,repo`, `cp ci/build-pi.yml .github/workflows/build-pi.yml`, commit. O workflow no GitHub ainda só conhece **2** plugins — `pixzclaw-brief` nunca passou por CI  
+10. Habilitar Actions no fork `capitv/zeroclaw-plugins` (um clique em Actions → "I understand my workflows") para rodar o `validate.yml` upstream de verdade e ter check verde no PR  
+11. Depois de gravar: congelar as txs reais do vídeo em `examples/verify-live` (`demo::MERCHANT` está vazio de propósito) + README + landing, para o juiz reproduzir o veredito exato com um comando  
+12. Roadmap only: on-ramp Transak/MoonPay; botões se host suportar  
 
 ---
 
