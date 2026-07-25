@@ -230,6 +230,7 @@
       "install.kicker": "Instalação",
       "install.title": "Três comandos<br>e um restart.",
       "install.lead": "Roda em qualquer host <b class=\"zc\">ZeroClaw</b> — inclusive num Raspberry Pi 3. Instalar, configurar, reiniciar.",
+      "install.step0.label": "Antes de instalar: rode a verificação na chain real, na sua máquina. Sem ZeroClaw, sem Pi. Ele imprime o endereço que vai ler e o link do Solscan <b>antes</b> do veredito — abra, confira as transferências, compare.",
       "install.step1.label": "Instale os 3 plugins da release {version} com um comando:",
       "install.step2.label": "Ajuste a chave PIX, o destino Solana e os limites. Use seus próprios valores:",
       "install.step3.label": "Reinicie o serviço para aplicar a config:",
@@ -253,7 +254,7 @@
       "faq.q6.a": "Ele usa o cron nativo do <b class=\"zc\">ZeroClaw</b>. O agente registra um job amarrado ao <code>invoice_id</code>, que chama <code>invoice_status</code> a cada 5 minutos, te avisa no Telegram quando o valor cair — e então remove a si mesmo. Está disponível desde a {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class=\"zc\">wasm32-wasip2</code> · 101 testes host · sem <code class=\"sol\">solana-sdk</code>.",
+      "footer.credit": "Feito para o bounty ZeroClaw × Superteam Brasil. Rust puro + <code class=\"zc\">wasm32-wasip2</code> · 135 testes host · sem <code class=\"sol\">solana-sdk</code>.",
       "footer.repo": "Repositório do PixZClaw",
       "footer.pr": "PR #123 · no repo oficial do ZeroClaw",
       "footer.release": "Release {version}",
@@ -471,6 +472,7 @@
       "install.kicker": "Installation",
       "install.title": "Three commands<br>and one restart.",
       "install.lead": "Runs on any <b class=\"zc\">ZeroClaw</b> host — including a Raspberry Pi 3. Install, configure, restart.",
+      "install.step0.label": "Before installing anything: run the verification against the live chain, on your machine. No ZeroClaw, no Pi. It prints the address it is about to read and a Solscan link <b>before</b> the verdict — open it, count the transfers, compare.",
       "install.step1.label": "Install the 3 plugins from the {version} release with one command:",
       "install.step2.label": "Set your PIX key, Solana recipient, and limits. Use your own values:",
       "install.step3.label": "Restart the service to apply the config:",
@@ -494,7 +496,7 @@
       "faq.q6.a": "It uses <b class=\"zc\">ZeroClaw</b>'s native cron. The agent registers a job tied to the <code>invoice_id</code>, which calls <code>invoice_status</code> every 5 minutes, pings you on Telegram when the money lands — and then removes itself. It has shipped since {version}.",
 
       /* ---------- footer ---------- */
-      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code class=\"zc\">wasm32-wasip2</code> · 101 host tests · no <code class=\"sol\">solana-sdk</code>.",
+      "footer.credit": "Built for the ZeroClaw × Superteam Brasil bounty. Pure Rust + <code class=\"zc\">wasm32-wasip2</code> · 135 host tests · no <code class=\"sol\">solana-sdk</code>.",
       "footer.repo": "PixZClaw repository",
       "footer.pr": "PR #123 · on ZeroClaw's official repo",
       "footer.release": "Release {version}",

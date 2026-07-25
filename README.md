@@ -53,6 +53,27 @@ confirm a payment it already covers, but it is not enough to claim money is
 missing — that would be the same lie as claiming PAID without checking, pointed
 the other way. It degrades to "amount not verified" and says so.
 
+## Check that claim yourself, in one command
+
+None of the above is worth anything asserted. So it is runnable — on your
+machine, against the live chain, with no ZeroClaw, no wasmtime and no Pi:
+
+```bash
+cd examples/verify-live
+cargo run -- --merchant <wallet that received USDC> \
+             --reference <address the payment carried> \
+             --expected 1 --lookback 5
+```
+
+It prints the address it is about to read and a Solscan link to it, *then* the
+verdict. Open the link, count the transfers, compare.
+
+This is not a re-implementation for demo purposes. It calls
+`invoice_status::status_tool::fetch_and_status` — the same function the wasm
+component calls — and swaps only the injected `HttpTransport`: `waki` over
+`wasi:http` in the plugin, `curl` here. Same source, same arithmetic, same
+verdict. Details in [examples/verify-live](./examples/verify-live).
+
 ## What it does not know
 
 **PIX settlement is not verifiable by software here.** The PIX rail produces a
@@ -93,6 +114,7 @@ crates/solana-wasm-core/   shared pure core (single source of truth)
 plugins/brl-usdc-invoice/  PIX EMV + Solana Pay URL          (T1)
 plugins/invoice-status/    on-chain USDC amount verification (T0)
 plugins/pixzclaw-brief/    24h close-of-day                  (T0)
+examples/verify-live/      run the T0 verification on any host, live chain
 skills/                    agent skills: onboarding, daily brief, payment watch
 docs/                      the landing page (GitHub Pages)
 scripts/                   install / force-reinstall helpers

@@ -24,8 +24,11 @@ fi
 # The source crate declares its own `[workspace]` so it builds standalone. The
 # vendored copy must not: it lives inside the plugin's workspace root, and a
 # second root in the same tree is a cargo error.
+# Cutting that section leaves the blank line that separated it, and a trailing
+# blank line at EOF is what `git diff --check` rejects in upstream CI. The
+# command substitution drops every trailing newline; printf restores exactly one.
 strip_workspace() {
-  sed '/^\[workspace\]$/,$d' "$1"
+  printf '%s\n' "$(sed '/^\[workspace\]$/,$d' "$1")"
 }
 
 if [[ ! -d "$SOURCE/src" ]]; then

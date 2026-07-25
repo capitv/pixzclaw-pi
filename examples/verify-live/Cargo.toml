@@ -1,0 +1,18 @@
+[package]
+name = "verify-live"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Run the invoice_status verification against the real Solana chain, from a host, with no ZeroClaw and no Raspberry Pi."
+publish = false
+
+[dependencies]
+# The plugin itself, host-side. `waki` is wasm-only, so this pulls in the pure
+# core and nothing that needs a WebAssembly runtime.
+invoice-status = { path = "../../plugins/invoice-status" }
+# The plugin's own vendored core, so `HttpTransport` here is the same trait the
+# plugin implements against — a second copy would be a different type.
+solana-wasm-core = { path = "../../plugins/invoice-status/vendor/solana-wasm-core" }
+serde_json = "1"
+
+[workspace]
