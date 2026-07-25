@@ -136,7 +136,7 @@ Português rende ~15% mais sílabas por palavra que o inglês. Os tempos abaixo 
 
 ### 4.1 Pi e agente
 - [ ] `zeroclaw service` **rodando** no Pi (o cron do ZeroClaw só dispara no tick de manutenção do daemon — sem serviço, o job do plano 10 fica gravado e nunca roda).
-- [ ] `zeroclaw plugin list` mostra os 3 plugins na versão da release v0.5.0-plugins.
+- [ ] `zeroclaw plugin list` mostra os 3 plugins na versão 0.3.1 (release v0.5.1-plugins — a que traz a verificação endurecida).
 - [ ] Config aplicada e conferida: `pix_key`, `pix_name`, `pix_city`, `merchant_solana`, `max_amount_brl`, `brl_per_usdc`, `recipient_locked=true`, `watch_hint=true` no `brl-usdc-invoice`; `merchant_solana`, `rpc_url`, `usdc_mint` no `invoice-status`.
 - [ ] `brl_per_usdc` = ⟨CONFIRMAR: valor configurado. Este roteiro assume **5.5**, o que faz R$ 55,00 = exatamente 10.000000 USDC. Se for outro, recalcule o `amount_brl` para cair em 10 USDC redondos e ajuste N2 e o plano 2⟩.
 - [ ] `max_amount_brl` ≥ 55 (senão a fatura falha fechado, corretamente, e o plano 2 morre).
@@ -356,7 +356,7 @@ JSON-RPC shapes are hand-written in a shared core and tested on the host.
 101 host tests, no network.
 
 Repo:      https://github.com/capitv/pixzclaw-pi
-Release:   https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.0-plugins
+Release:   https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.1-plugins
 Landing:   https://capitv.github.io/pixzclaw-pi/
 PR:        https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123
 ZeroClaw:  https://docs.zeroclawlabs.ai/master/en/introduction.html
