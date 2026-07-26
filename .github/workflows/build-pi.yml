@@ -35,9 +35,16 @@ jobs:
           cargo build --locked --target wasm32-wasip2 --release
           cp target/wasm32-wasip2/release/invoice_status.wasm .
 
+      - name: Test + build pixzclaw-brief
+        working-directory: plugins/pixzclaw-brief
+        run: |
+          cargo test --locked
+          cargo build --locked --target wasm32-wasip2 --release
+          cp target/wasm32-wasip2/release/pixzclaw_brief.wasm .
+
       - name: Stage plugin install dirs
         run: |
-          mkdir -p dist/plugins/brl-usdc-invoice dist/plugins/invoice-status
+          mkdir -p dist/plugins/brl-usdc-invoice dist/plugins/invoice-status dist/plugins/pixzclaw-brief
           cp plugins/brl-usdc-invoice/manifest.toml \
              plugins/brl-usdc-invoice/brl_usdc_invoice.wasm \
              plugins/brl-usdc-invoice/config.example.toml \
@@ -48,6 +55,11 @@ jobs:
              plugins/invoice-status/config.example.toml \
              plugins/invoice-status/README.md \
              dist/plugins/invoice-status/
+          cp plugins/pixzclaw-brief/manifest.toml \
+             plugins/pixzclaw-brief/pixzclaw_brief.wasm \
+             plugins/pixzclaw-brief/config.example.toml \
+             plugins/pixzclaw-brief/README.md \
+             dist/plugins/pixzclaw-brief/
           cp PI_INSTALL.md dist/ 2>/dev/null || true
           tar -C dist -czf pixzclaw-plugins.tar.gz plugins PI_INSTALL.md 2>/dev/null || tar -C dist -czf pixzclaw-plugins.tar.gz plugins
           ls -lah dist pixzclaw-plugins.tar.gz
