@@ -34,7 +34,7 @@ Do `README.md` do `invoice-status` (caso UNDERPAID, saída verbatim de `fetch_an
 
 ```text
 INVOICE: INV-DEMO-A
-REF: ⟨CONFIRMAR: 11 primeiros chars da reference⟩…
+REF: A6vpxfrrsje…
 USDC: UNDERPAID ⚠️ (recebido 1 de 10 USDC — faltam 9) latest=⟨CONFIRMAR: 11 chars da assinatura⟩…
 EXPLORER: https://solscan.io/tx/⟨CONFIRMAR: assinatura completa⟩
 PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)
@@ -157,9 +157,18 @@ O QR da própria fatura carrega `amount=10` e o Phantom **não deixa editar** o 
 1. Emita a `INV-DEMO-A` **uma vez, em ensaio**, no mesmo bot e com o mesmo `merchant_solana`. A reference é determinística — `bs58(sha256("zc-inv-v1" ‖ invoice_id ‖ "|" ‖ merchant))` — então ela será **idêntica** na gravação.
 2. Copie o link do QR da Solana no Telegram (o `https://api.qrserver.com/...?data=solana%3A...`).
 3. Decodifique o percent-encoding num editor de texto e extraia o valor de `reference=`.
-4. Monte a URL parcial trocando só o amount:
-   `solana:<merchant_solana>?amount=1&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=<a mesma reference>&label=...&message=INV-DEMO-A`
-5. Gere o QR dessa URL: `https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=8&data=<url percent-encoded>` e deixe aberto numa aba do desktop.
+4. **Já montado para esta demo.** Carteira `GX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo`,
+   reference `A6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd`:
+
+   ```
+   solana:GX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo?amount=1&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=A6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd&label=PixZClaw&message=INV-DEMO-A
+   ```
+
+5. QR pronto — abra numa aba do desktop e deixe em tela cheia:
+
+   ```
+   https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=8&data=solana%3AGX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo%3Famount%3D1%26spl-token%3DEPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v%26reference%3DA6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd%26label%3DPixZClaw%26message%3DINV-DEMO-A
+   ```
 6. No plano 5, escaneie esse QR com o scanner do Phantom (a gravação de tela do celular mostra o visor da câmera lendo a tela do desktop — não precisa de segunda câmera).
 
 **Como extrair a reference completa — resolvido.** Não copie do QR nem do chat (o
