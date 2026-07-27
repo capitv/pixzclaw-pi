@@ -15,7 +15,7 @@ Legenda da coluna **Fonte**: `PI` = terminal SSH no Raspberry Pi (desktop) · `T
 | # | Timecode | Fonte | O que aparece na tela | Narração (bloco EN/PT correspondente) |
 |---|---|---|---|---|
 | 1 | 0:00–0:10 | PI | Terminal já logado no Pi, prompt limpo. Digitar e rodar: `uname -m && zeroclaw plugin list`. Saída mostra `aarch64` e os 3 plugins: `brl-usdc-invoice`, `invoice-status`, `pixzclaw-brief`. | **N1** |
-| 2 | 0:10–0:26 | TG | Chat do bot vazio. O lojista digita e envia: `Cobra R$ 55 do cliente, fatura INV-DEMO-A. Use brl_usdc_invoice. Sem redact.` O card da fatura aparece: `🦞 PixZClaw — Fatura #INV-DEMO-A` · `💰 R$ 55.00 · ₮ 10.000000 USDC`. | **N2** |
+| 2 | 0:10–0:26 | TG | Chat do bot vazio. O lojista digita e envia: `Cobra R$ 55 do cliente, pedido INV-DEMO-A`. O ZeroClaw pede aprovação da tool — **deixe aparecer**, é a superfície de custódia visível na tela. Aprove. O card da fatura aparece: `🦞 PixZClaw — Fatura #INV-DEMO-A` · `💰 R$ 55.00 · ₮ 10 USDC`. | **N2** |
 | 3 | 0:26–0:44 | TG | Scroll lento pelo card: bloco `🇧🇷 PIX (BRL)` com o QR e o copia-e-cola em code block; bloco `◎ Solana Pay (USDC)` com o QR. Parar com os dois trilhos visíveis na mesma tela. | **N3** |
 | 4 | 0:44–0:56 | TG | Segue no card. Destaque (dedo/scroll) no rodapé: `🔒 teto R$ 1000 · destino travado=sim`. Sem edição gráfica — só a rolagem parando na linha. | **N4** |
 | 5 | 0:56–1:14 | PH | Phantom abre a requisição de transferência (Solana Pay parcial — ver §4, item "QR de pagamento parcial"): destino = pubkey do lojista, `1 USDC`. Toque em confirmar. Tela de sucesso. **Pagamento real, mainnet.** | **N5** |
@@ -47,6 +47,18 @@ Três coisas que **têm que** estar ausentes nesse bloco, e que valem ser notada
 - a linha `PIX: PENDING` diz, na própria saída, que a ferramenta não enxerga o SPI do banco.
 
 **Formatação confirmada no código-fonte.** `fmt_amount()` em `crates/solana-wasm-core/src/status.rs:258` formata com `{x:.6}` e depois corta os zeros à direita e o ponto órfão. Logo 1.0 → `1`, 10.0 → `10`, 9.0 → `9`. A saída é literalmente `recebido 1 de 10 USDC — faltam 9`. Não precisa ajustar a narração N7.
+
+### 1.2 Sem muleta na frase
+
+Uma versão anterior deste roteiro mandava `Use brl_usdc_invoice. Sem redact.`
+junto com a cobrança. Testado no Pi: o agente escolhe a ferramenta sozinho a
+partir de `Cobra R$ 55 do cliente, pedido INV-DEMO-A`, e `Sem redact` nunca fez
+nada — a redação de base58 é do host e instrução no chat não a desliga, que é a
+razão de o trilho USDC ser QR-only.
+
+As duas frases contavam uma história pior que a verdade: que o agente não
+escolhe a ferramenta, e que o operador está contornando algo quebrado. Um
+lojista real não digita nome de função.
 
 ---
 
