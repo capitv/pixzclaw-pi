@@ -148,11 +148,11 @@ Português rende ~15% mais sílabas por palavra que o inglês. Os tempos abaixo 
 
 ### 4.1 Pi e agente
 - [ ] `zeroclaw service` **rodando** no Pi (o cron do ZeroClaw só dispara no tick de manutenção do daemon — sem serviço, o job do plano 10 fica gravado e nunca roda).
-- [ ] `zeroclaw plugin list` mostra os 3 plugins na versão 0.3.1 (release v0.5.1-plugins — a que traz a verificação endurecida).
+- [ ] `zeroclaw plugin list` mostra `brl-usdc-invoice v0.3.6`, `invoice-status v0.3.2`, `pixzclaw-brief v0.3.2` (release **v0.5.6-plugins** — a primeira em que o card chega ao Telegram literal).
 - [ ] Config aplicada e conferida: `pix_key`, `pix_name`, `pix_city`, `merchant_solana`, `max_amount_brl`, `brl_per_usdc`, `recipient_locked=true`, `watch_hint=true` no `brl-usdc-invoice`; `merchant_solana`, `rpc_url`, `usdc_mint` no `invoice-status`.
-- [ ] `brl_per_usdc` = ⟨CONFIRMAR: valor configurado. Este roteiro assume **5.5**, o que faz R$ 55,00 = exatamente 10.000000 USDC. Se for outro, recalcule o `amount_brl` para cair em 10 USDC redondos e ajuste N2 e o plano 2⟩.
+- [x] `brl_per_usdc` = **5.5** — confirmado em 2026-07-28 pelo próprio card, que imprime a cotação usada (`cotação R$/USDC usada: 5.5`). R$ 55,00 = exatamente 10.000000 USDC.
 - [ ] `max_amount_brl` ≥ 55 (senão a fatura falha fechado, corretamente, e o plano 2 morre).
-- [ ] **Redact desligado** no agente de cobrança. Teste antes: emita uma fatura descartável e confira que o link `api.qrserver.com` **não** vem com `[REDACTED_…]` no meio.
+- [x] **Redact não precisa ser desligado — e não pode.** Medido: o host redacta base58 de alta entropia no chat sempre, mas **pula o conteúdo dentro de URLs `https://`**. Por isso o trilho USDC é QR-only: o link `api.qrserver.com` carrega a URI Solana Pay inteira e passa intacto. Uma linha `solana:` crua vira `solana:[REDACTED_HIGH_ENTROPY_TOKEN]?…` — a v0.5.4 tentou e foi revertida na v0.5.5. Teste de fumaça antes de gravar: emita uma fatura descartável e confira que não há `[REDACTED_` em lugar nenhum do card.
 - [ ] Skills `pixzclaw-daily` e `pixzclaw-watch` + `SOUL.md` carregados, serviço reiniciado depois de qualquer `config set`.
 - [ ] `rpc_url`: ⟨CONFIRMAR: usar endpoint dedicado se existir. O público `api.mainnet-beta.solana.com` limita taxa e é o maior risco de o plano 7 falhar ao vivo⟩.
 - [ ] Bot/agent **dedicado** ao PixZClaw, se possível — evita que a sessão traga histórico de outro uso para dentro do plano.
