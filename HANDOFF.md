@@ -256,12 +256,36 @@ desliga). Política: linha `solana:` crua NUNCA aparece; trilho USDC é
 QR-only (o QR codifica a URL completa e sobrevive). PIX copia-e-cola
 sobrevive (não é base58).
 
+### Resolvido em 2026-07-28 (v0.5.6-plugins / brl-usdc-invoice 0.3.6) ✅
+
+**Card literal no Telegram — confirmado no Pi.** Até 0.3.5 o agente parafraseava
+o card e comia as três linhas que sustentam a narrativa do vídeo
+(`🧾 … cotação R$/USDC usada`, `🔒 teto R$ … · destino travado=`, `🔔 (só pra você)`).
+Duas travas juntas resolveram; nenhuma sozinha foi testada como suficiente:
+1. `skills/SOUL.md` → seção “O card da fatura é literal — regra dura”, proibições concretas;
+2. linha `[sistema]` no fim da saída da tool: *“Reenvie TUDO acima desta linha na
+   íntegra, caractere por caractere…”*. O agente corretamente **não** reenvia essa
+   linha (ela diz “acima desta linha”) — a ausência dela na mensagem do Telegram é
+   o comportamento certo, não uma falha.
+
+Saída verificada em produção com `Cobra R$ 55 do cliente, pedido INV-DEMO-A`:
+merchant `GX11xnCq…`, `amount=10`, `spl-token=EPjFWdd5…`, reference
+`A6vpxfrrsje…`, PIX de 157 chars com CRC único `630497E1`.
+
+**Se regredir:** o próximo degrau é mover `🧾`/`🔒` para dentro do bloco de código
+cercado do PIX — território onde o agente comprovadamente não mexe. Não foi
+preciso; não fazer preventivamente (polui o copia-e-cola do PIX).
+
+**Release 500 no CDN:** o asset de v0.5.6 registrou `uploaded` com 396514 bytes mas
+o CDN servia 160949 bytes e depois HTTP 500. `delete-asset` + reupload **não**
+resolve. O que resolve: deletar e recriar a release inteira (tag preservada, notas
+re-supridas de arquivo), depois esperar propagação em loop `until curl -sfI … `.
+
 ### Em andamento / frágil ⚠️
-1. **Config real no Pi** (`pix_key`, `merchant_solana`) — usuário em processo de configurar  
-2. **Redact** no agent ainda pode mascarar `solana:` se não desligado  
-3. **Onboard no chat** coleta dados mas **não grava** config sozinho — precisa `config set` no host  
-4. Persona depende de skills/SOUL carregados + restart  
-5. Bot Telegram “aba” separada (agent/canal dedicado) — **documentado, não implementado na config do user**  
+1. **Onboard no chat** coleta dados mas **não grava** config sozinho — precisa `config set` no host  
+2. `zeroclaw config set <chave> <valor>` **ignora o argumento** e pergunta no TTY para segredos criptografados → um comando por vez, sem pipe  
+3. Persona depende de skills/SOUL carregados + restart  
+4. Bot Telegram “aba” separada (agent/canal dedicado) — **documentado, não implementado na config do user**  
 
 ### Não feito ❌
 1. Vídeo demo ≤3 min Superteam — roteiro pronto em `pixzclaw-pi/VIDEO-SCRIPT.md` (11 planos, 2:56), falta gravar  
