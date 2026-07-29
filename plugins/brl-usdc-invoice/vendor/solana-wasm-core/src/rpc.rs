@@ -100,6 +100,48 @@ impl<T: HttpTransport> RpcClient<T> {
         Ok(out)
     }
 
+    /// The merchant's token account addresses for one mint.
+    ///
+    /// Needed because a payment can arrive with no reference at all. Phantom
+    /// reads a Solana Pay URI, takes the recipient and the amount — it filled
+    /// in the exact amount on screen — and then builds a plain transfer,
+    /// dropping the `reference` account. Measured on mainnet: transaction
+    /// `3UQpJTip…` moved exactly the invoiced 0.181818 USDC to the right
+    /// merchant and carried neither the reference nor a memo.
+    ///
+    /// `getSignaturesForAddress(reference)` therefore returns nothing, and the
+    /// only remaining place the payment is visible is the merchant's own token
+    /// account. Derivation of the ATA is deliberately not done locally: it is
+    /// a program address whose derivation needs an on-curve check, and the RPC
+    /// already knows the answer.
+    ///
+    /// Returns every matching account (usually one) so a merchant holding the
+    /// same mint in more than one account is not silently half-checked.
+    pub fn get_token_accounts_for_mint(
+        &self,
+        owner: &str,
+        mint: &str,
+    ) -> Result<Vec<String>, RpcError> {
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getTokenAccountsByOwner",
+            "params": [owner, { "mint": mint }, { "encoding": "jsonParsed" }]
+        });
+        let resp = self.http.post_json(&self.endpoint, &body)?;
+        Self::rpc_result(&resp)?;
+        let arr = resp
+            .get("result")
+            .and_then(|r| r.get("value"))
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| RpcError::new("getTokenAccountsByOwner: missing result.value"))?;
+        Ok(arr
+            .iter()
+            .filter_map(|item| item.get("pubkey").and_then(|p| p.as_str()))
+            .map(str::to_string)
+            .collect())
+    }
+
     /// Call `getBalance` — returns lamports for a system account.
     pub fn get_balance(&self, address: &str) -> Result<u64, RpcError> {
         let body = json!({

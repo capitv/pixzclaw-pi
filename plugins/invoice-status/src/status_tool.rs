@@ -11,8 +11,9 @@ use std::collections::HashMap;
 use serde_json::Value;
 use solana_wasm_core::amount::compare_units_to_decimal;
 use solana_wasm_core::{
-    derive_reference, status_from_signatures, status_from_signatures_verified, HttpTransport,
-    RpcClient, SignatureInfo, UsdcReceipt, USDC_MINT,
+    derive_reference, status_from_signatures, status_from_signatures_verified,
+    status_unreferenced_match, HttpTransport, RpcClient, SignatureInfo, UnreferencedMatch,
+    UsdcReceipt, USDC_MINT,
 };
 
 /// Default Solana mainnet public RPC (operator should override in production).
@@ -351,6 +352,29 @@ pub fn fetch_and_status<T: HttpTransport>(
         })
     };
 
+    // Nothing on the reference at all. That is not the same as "not paid":
+    // Phantom reads the Solana Pay URI, shows the exact amount, and then builds
+    // a plain transfer without the reference account. Measured on mainnet —
+    // `3UQpJTip…` delivered the invoiced 0.181818 USDC to the right merchant
+    // with neither reference nor memo, and this tool answered PENDING while the
+    // money was already there.
+    //
+    // Only worth looking when there is an amount to match against. Without an
+    // expected amount any incoming transfer would "match", which is not a
+    // weaker verdict, it is a wrong one.
+    if sigs.is_empty() {
+        if let Some(exp) = expected {
+            if let Some(m) = find_unreferenced_payment(&client, cfg, req, exp)? {
+                return Ok(status_unreferenced_match(
+                    &req.invoice_id,
+                    &reference,
+                    &m,
+                    req.pix_marked_paid,
+                ));
+            }
+        }
+    }
+
     Ok(status_from_signatures_verified(
         &req.invoice_id,
         &reference,
@@ -359,6 +383,61 @@ pub fn fetch_and_status<T: HttpTransport>(
         req.expected_usdc.as_deref(),
         req.pix_marked_paid,
     ))
+}
+
+/// Scan the merchant's own token account for a transfer matching the invoice
+/// amount exactly.
+///
+/// Exact, not "close": this verdict is already weaker than a referenced one,
+/// and a tolerance band on top of an amount-only match would let any nearby
+/// transfer claim the invoice.
+///
+/// Scans newest first and stops at the first exact hit. Older transfers of the
+/// same amount are not better candidates than the newest one, and each extra
+/// candidate costs a `getTransaction` round trip.
+fn find_unreferenced_payment<T: HttpTransport>(
+    client: &RpcClient<T>,
+    cfg: &StatusConfig,
+    req: &StatusRequest,
+    expected: &str,
+) -> Result<Option<UnreferencedMatch>, String> {
+    let merchant = cfg.merchant_solana.trim();
+    let accounts = client
+        .get_token_accounts_for_mint(merchant, &cfg.usdc_mint)
+        .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?;
+
+    for account in accounts {
+        let sigs = client
+            .get_signatures_for_address(&account, req.effective_lookback())
+            .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?;
+
+        for sig in sigs.iter().filter(|s| s.is_success()) {
+            let Some(r) = client
+                .get_transaction(&sig.signature, &cfg.usdc_mint, merchant)
+                .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?
+            else {
+                // Amount unverifiable → cannot claim it matches. Skipping is
+                // the honest move; asserting a match here would be worse than
+                // the PENDING this is trying to fix.
+                continue;
+            };
+            if r.received_units == 0 {
+                continue;
+            }
+            let matches = compare_units_to_decimal(r.received_units, r.decimals, expected)
+                .map(|c| c.expected_units > 0 && c.ordering == Ordering::Equal)
+                .unwrap_or(false);
+            if matches {
+                return Ok(Some(UnreferencedMatch {
+                    signature: sig.signature.clone(),
+                    received_units: r.received_units,
+                    decimals: r.decimals,
+                    block_time: r.block_time.or(sig.block_time),
+                }));
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// Build a successful fixture signature for host unit tests.

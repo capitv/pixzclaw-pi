@@ -168,7 +168,9 @@ fn verified_exact_payment_emits_receipt() {
     // merchant must not travel to the customer inside it.
     let fenced: Vec<&str> = s.split("```").skip(1).step_by(2).collect();
     assert!(
-        fenced.iter().any(|b| b.contains("RECIBO — INVOICE #inv-001")),
+        fenced
+            .iter()
+            .any(|b| b.contains("RECIBO — INVOICE #inv-001")),
         "receipt must be inside a fence:\n{s}"
     );
     assert!(
@@ -741,4 +743,122 @@ fn fetch_and_status_degrades_when_tx_missing() {
     let s = fetch_and_status(&verified_req(Some("90")), &cfg, http).unwrap();
     assert!(s.contains("USDC: SIG OK"), "{s}");
     assert!(!s.contains("USDC: PAID"), "{s}");
+}
+
+// ── Payment that arrived without carrying the reference ─────────────────────
+
+/// Transport that answers by *address*, not just by method, so one
+/// `fetch_and_status` can see an empty reference and a funded merchant account
+/// in the same call.
+struct ByAddressHttp {
+    reference: String,
+    ata: String,
+    ata_sigs: Value,
+    tx: Value,
+    calls: RefCell<Vec<String>>,
+}
+
+impl HttpTransport for ByAddressHttp {
+    fn post_json(&self, _url: &str, body: &Value) -> Result<Value, RpcError> {
+        let method = body["method"].as_str().unwrap_or_default();
+        let addr = body["params"][0].as_str().unwrap_or_default().to_string();
+        self.calls.borrow_mut().push(format!("{method}:{addr}"));
+        let result = match method {
+            // The reference sees nothing: the payer's wallet dropped it.
+            "getSignaturesForAddress" if addr == self.reference => json!([]),
+            "getSignaturesForAddress" if addr == self.ata => self.ata_sigs.clone(),
+            "getTokenAccountsByOwner" => json!({
+                "value": [ { "pubkey": self.ata, "account": {} } ]
+            }),
+            "getTransaction" => self.tx.clone(),
+            other => return Err(RpcError::new(format!("unexpected: {other} {addr}"))),
+        };
+        Ok(json!({ "jsonrpc": "2.0", "id": 1, "result": result }))
+    }
+}
+
+fn phantom_style_http(paid_ui: f64) -> ByAddressHttp {
+    ByAddressHttp {
+        reference: solana_wasm_core::derive_reference(INVOICE_ID, MERCHANT),
+        ata: "8FQWtD4i2cu6DR3ozWgjjqGa7RfN6AXLmYzCRP8TB27f".to_string(),
+        ata_sigs: json!([{
+            "signature": "3UQpJTippCZzdbrWMijcKeYXvkMUo5cruKw41CJW4s9m",
+            "slot": 435_991_632u64,
+            "err": null,
+            "blockTime": 1_785_346_895u64,
+            "confirmationStatus": "finalized"
+        }]),
+        tx: json!({
+            "blockTime": 1_785_346_895u64,
+            "slot": 435_991_632u64,
+            "meta": {
+                "err": null,
+                "preTokenBalances": [ token_balance(MINT, MERCHANT, 0.0) ],
+                "postTokenBalances": [ token_balance(MINT, MERCHANT, paid_ui) ]
+            }
+        }),
+        calls: RefCell::new(Vec::new()),
+    }
+}
+
+/// Phantom reads the Solana Pay URI, shows the exact amount, then builds a
+/// plain SPL transfer and drops the reference account. Measured on mainnet:
+/// `3UQpJTip…` delivered the invoiced amount to the right merchant carrying
+/// neither the reference nor a memo, and this tool answered PENDING while the
+/// money was already in the merchant's account.
+#[test]
+fn a_payment_that_dropped_the_reference_is_reported_as_evidence_not_proof() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let s = fetch_and_status(&verified_req(Some("90")), &cfg, phantom_style_http(90.0)).unwrap();
+
+    assert!(s.contains("USDC: PROVÁVEL"), "{s}");
+    // Never PAID. The amount matching is not proof that this transfer belongs
+    // to this invoice -- two invoices for the same amount are indistinguishable
+    // this way, which is the ambiguity the reference existed to remove.
+    assert!(!s.contains("USDC: PAID"), "{s}");
+    assert!(s.contains("NÃO carrega a reference"), "{s}");
+    assert!(s.contains("indício, não prova"), "{s}");
+    // No receipt: there is nothing here worth handing a customer as proof.
+    assert!(!s.contains("RECIBO"), "{s}");
+    // And no teardown: the watcher must keep running until something is proven.
+    assert!(!s.contains("cron_remove"), "{s}");
+    // The transaction is still linked, because the merchant can check it.
+    assert!(s.contains("solscan.io/tx/3UQpJTip"), "{s}");
+}
+
+/// A near miss is not a match. This verdict is already weaker than a referenced
+/// one; a tolerance band on top of an amount-only match would let any nearby
+/// transfer claim the invoice.
+#[test]
+fn an_unreferenced_transfer_of_the_wrong_amount_does_not_match() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let s = fetch_and_status(
+        &verified_req(Some("90")),
+        &cfg,
+        phantom_style_http(89.999999),
+    )
+    .unwrap();
+    assert!(s.contains("USDC: PENDING"), "{s}");
+    assert!(!s.contains("PROVÁVEL"), "{s}");
+}
+
+/// Without an expected amount there is nothing to match against, so every
+/// incoming transfer would "match". That is not a weaker verdict, it is a wrong
+/// one -- so the scan must not even run.
+#[test]
+fn no_expected_amount_means_no_unreferenced_scan_at_all() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let http = phantom_style_http(90.0);
+    let s = fetch_and_status(&verified_req(None), &cfg, http).unwrap();
+    assert!(s.contains("USDC: PENDING"), "{s}");
+    assert!(!s.contains("PROVÁVEL"), "{s}");
 }

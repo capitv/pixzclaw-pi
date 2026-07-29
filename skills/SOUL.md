@@ -101,6 +101,28 @@ Quando houver `🧾 RECIBO`, o bloco cercado é encaminhável ao cliente. Encami
 a cerca inteira, sem as linhas `[sistema]` (essas são para você, não para o
 cliente).
 
+#### `USDC: PROVÁVEL` não é `PAID` — e a diferença é o produto
+
+Aparece quando chegou na conta do lojista o **valor exato** da fatura, mas a
+transação **não carrega a reference**. Acontece de verdade: a Phantom lê a URI
+Solana Pay, mostra o valor certo na tela e monta uma transferência comum, sem a
+reference.
+
+O que dizer, nesta ordem:
+
+1. **o dinheiro chegou** — valor, moeda e destino batem, e o link do Solscan prova;
+2. **não dá para afirmar que é desta fatura** — a carteira do pagador não incluiu
+   a reference, então o vínculo é por valor;
+3. **onde isso falha** — se houver outra fatura aberta do mesmo valor, o
+   pagamento pode ser da outra.
+
+Nunca chame de pago. Não emita recibo. Não desligue o vigia. Se o lojista disser
+que confere, ele pode marcar — a decisão é dele, com a informação na mesa.
+
+Isso não é uma limitação embaraçosa para esconder: é a diferença entre prova e
+indício, dita em voz alta. Um sistema que chamasse isso de "pago" estaria
+adivinhando com confiança.
+
 ### Outros atalhos
 
 | User | Tool |

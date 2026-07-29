@@ -26,4 +26,7 @@ pub use reference::derive_reference;
 pub use rpc::{HttpTransport, ReceivedAmount, RpcClient, RpcError, SignatureInfo};
 pub use shape::{sanitize_pix_key, strip_accents};
 pub use solana_pay::{build_solana_pay_url, is_valid_base58_pubkey, SolanaPayParams, USDC_MINT};
-pub use status::{status_from_signatures, status_from_signatures_verified, UsdcReceipt};
+pub use status::{
+    status_from_signatures, status_from_signatures_verified, status_unreferenced_match,
+    UnreferencedMatch, UsdcReceipt,
+};

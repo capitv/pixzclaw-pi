@@ -268,6 +268,78 @@ pub fn status_from_signatures_verified(
     out
 }
 
+/// A payment that reached the merchant without carrying the invoice reference.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnreferencedMatch {
+    /// Signature of the transaction that moved the funds.
+    pub signature: String,
+    /// Net minor units the merchant received in it.
+    pub received_units: u128,
+    /// Decimals of the mint.
+    pub decimals: u32,
+    /// Block time (unix seconds), if the RPC reported one.
+    pub block_time: Option<i64>,
+}
+
+/// Status for a payment that matches the invoice **by amount only**.
+///
+/// Phantom reads a Solana Pay URI, takes the recipient and the amount — it
+/// shows the exact figure on screen — and then builds a plain SPL transfer,
+/// dropping the `reference` account. Measured on mainnet: `3UQpJTip…` moved
+/// exactly the invoiced 0.181818 USDC to the right merchant, carrying neither
+/// the reference nor a memo. The reference scan cannot see that payment, so
+/// the merchant was told PENDING while the money was already in their account.
+///
+/// The answer is a **separate and weaker verdict**, never `PAID`. What is known
+/// is that the right amount of the right mint reached the right account inside
+/// the lookback window. What is not known is that it belongs to *this* invoice:
+/// two invoices for the same amount on the same day are indistinguishable this
+/// way, which is exactly the ambiguity the reference existed to remove.
+///
+/// So it says so, in the verdict, in the merchant's language — and emits no
+/// receipt and no watcher teardown, because there is nothing here worth handing
+/// a customer as proof, and the watch must keep running until something is.
+pub fn status_unreferenced_match(
+    invoice_id: &str,
+    reference: &str,
+    m: &UnreferencedMatch,
+    pix_marked_paid: bool,
+) -> String {
+    let id = if invoice_id.trim().is_empty() {
+        "(unknown)"
+    } else {
+        invoice_id.trim()
+    };
+    let recv_str = format_minor_units(m.received_units, m.decimals);
+    let when = match m.block_time {
+        Some(ts) => format_unix_utc(ts),
+        None => "data indisponível".to_string(),
+    };
+
+    let pix_status = if pix_marked_paid {
+        "PIX: PAID (marcado pelo operador — SPI/banco NÃO verificado por esta tool)"
+    } else {
+        "PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)"
+    };
+
+    let mut out = format!(
+        "INVOICE: {id}\n\
+         USDC: PROVÁVEL ⚠️ (recebido {recv_str} em {when} — valor, moeda e destino batem \
+         com esta fatura, mas a transação NÃO carrega a reference: a carteira do pagador \
+         não a incluiu. Isso é indício, não prova. Se você emitiu outra fatura do mesmo \
+         valor, este pagamento pode ser da outra.)\n\
+         {pix_status}\n\
+         OVERALL: PENDING (indício de pagamento, sem prova de vínculo com esta fatura)\n\
+         ```\n\
+         REF: https://solscan.io/account/{reference}\n\
+         EXPLORER: https://solscan.io/tx/{sig}\n\
+         ```\n",
+        sig = m.signature,
+    );
+    out.push_str(VERBATIM_HINT);
+    out
+}
+
 /// Agent-facing instruction appended to every status block.
 ///
 /// The block is read by a model before it reaches a human, and a model
