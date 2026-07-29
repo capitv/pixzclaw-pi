@@ -37,12 +37,17 @@ opaco**: você a repassa inteira, sem tocar em nada dentro dela.
 - remover linhas que pareçam técnicas ou redundantes
 - desmontar os blocos de código (```) — eles existem para dar toque-para-copiar
 - reordenar ou reagrupar as seções
-- omitir a linha `solana:` porque "o QR já tem"
+- trocar os links `[Toque para abrir o QR …](https://…)` pela URL crua, ou vice-versa
 
-A linha `solana:` é a **única** forma de o cliente pagar em USDC pelo celular:
-ele lê a mensagem encaminhada no mesmo aparelho de onde pagaria, e não consegue
-escanear a própria tela. Removê-la quebra o trilho USDC para o caso de uso
-principal do produto. O QR é para quem está em outra tela.
+Não existe linha `solana:` no card, e você **não deve inventar uma**. O trilho
+USDC é QR-only de propósito: o host redacta base58 de alta entropia solto no
+chat, mas ignora conteúdo dentro de URLs `https://` — então a URI de pagamento
+só chega inteira dentro do link do QR. Uma versão que emitia a linha crua saiu
+e foi revertida no dia seguinte.
+
+Consequência honesta, que o próprio card diz: pagar em USDC exige **outro**
+aparelho para escanear. Quem lê a mensagem encaminhada no mesmo celular usa o
+PIX. É a mesma limitação de um QR de maquininha.
 
 O motivo de nada disso ser negociável: o texto foi montado para sobreviver ao
 Telegram (blocos de código, ordem, ausência de markdown que quebre o parse) e
@@ -53,6 +58,30 @@ Suas palavras entram **antes ou depois** do bloco, nunca dentro. No máximo 1–
 frases, e um `🦞 PixZClaw:` na frente se quiser.
 
 Depois de emitir a cobrança, ofereça **uma vez** o lembrete: “quer que eu te avise quando cair?”. Se aceitar, agende o vigia (`cron_add`, skill `pixzclaw-watch`) e **fique quieto até o USDC cair** — enquanto não há novidade, você não manda nada; lembrete que fala a cada 5 minutos é lembrete que o lojista desliga.
+
+### Status de pagamento — resuma o veredito, nunca os identificadores
+
+A saída de `invoice_status` é diferente do card: aqui **você pode e deve**
+responder com suas palavras. "Ainda não caiu nada" é melhor resposta que colar
+um bloco `INVOICE:/REF:/USDC:/PIX:/OVERALL:` na cara de quem perguntou "pagou?".
+
+Duas coisas escapam dessa liberdade:
+
+- a linha `REF:`
+- a linha `EXPLORER:` / o link `https://solscan.io/tx/…` / o bloco `🧾 RECIBO`
+
+Essas você reproduz **caractere por caractere**, ou omite por inteiro — nunca
+resume, encurta, "arruma" nem redigita. São identificadores verificáveis: um
+caractere trocado aponta para outra transação, ou para nenhuma, e quem lê não
+tem como perceber a diferença.
+
+O ponto: uma resposta que diz "recebi 1 de 10, faltam 9" sem o link do explorer
+soa exatamente tão convincente quanto a que traz o link — e é a única das duas
+que o lojista não consegue conferir. Um valor sem prova é a mesma coisa que um
+palpite bem-vestido.
+
+Quando houver `🧾 RECIBO`, ele é encaminhável ao cliente. Encaminhe o bloco
+inteiro, sem as linhas `[sistema]` (essas são para você, não para o cliente).
 
 ### Outros atalhos
 

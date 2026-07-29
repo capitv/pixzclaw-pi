@@ -248,6 +248,8 @@ pub fn status_from_signatures_verified(
         out.push('\n');
         out.push_str(&rc);
     }
+    out.push('\n');
+    out.push_str(VERBATIM_HINT);
     // Settled with a confirmed amount → tell the agent to stop any watcher.
     // Never emitted on PENDING / UNDERPAID / SIG OK: the reminder must keep
     // running until the value is actually confirmed.
@@ -258,9 +260,34 @@ pub fn status_from_signatures_verified(
     out
 }
 
+/// Agent-facing instruction appended to every status block.
+///
+/// The block is read by a model before it reaches a human, and a model
+/// summarising a status into friendly prose is normally the right thing. It is
+/// the wrong thing for two of these lines. `REF:` and the Solscan URL are
+/// *verifiable identifiers*: one wrong character points at a different
+/// transaction, or at none, and the reader has no way to tell. A status answer
+/// that says "recebi 1 de 10, faltam 9" without the explorer link has dropped
+/// the only part a merchant — or a judge — can check independently, and it
+/// reads exactly as convincing as one that kept it.
+///
+/// Measured on a live host: asked whether an invoice had been paid, the agent
+/// rewrote this block as prose and silently dropped `REF:`. Same failure the
+/// invoice card had, same fix.
+///
+/// Deliberately narrow. It does not demand the whole block verbatim, because
+/// prose around the verdict is genuinely better for the merchant; it pins only
+/// the lines that stop being evidence when they are retyped.
+pub const VERBATIM_HINT: &str = "[sistema] Você pode resumir o veredito com suas palavras. \
+As linhas REF:, EXPLORER: e o bloco de recibo, não: reproduza-as na íntegra, caractere por \
+caractere, ou omita-as por inteiro. São identificadores verificáveis — um caractere trocado \
+aponta para outra transação, ou para nenhuma, e quem lê não tem como perceber.";
+
 /// Agent-facing instruction appended after the shareable receipt when the
 /// invoice is settled with a confirmed amount. Always the last line, outside
-/// the receipt block.
+/// the receipt block — it must stay below [`VERBATIM_HINT`], whose "as linhas
+/// acima" would otherwise scope over it and invite the agent to echo an
+/// internal cron instruction at the merchant.
 pub const SETTLED_CRON_HINT: &str = "[sistema] Fatura liquidada: se existir um lembrete cron desta fatura, remova-o (cron_remove) e não agende novos.";
 
 /// Narrow a caller-supplied string down to characters that are safe to echo
@@ -617,11 +644,56 @@ mod tests {
             assert_eq!(last, SETTLED_CRON_HINT, "{name}: {s}");
             assert!(last.starts_with("[sistema]"), "{name}");
             assert!(last.contains("cron_remove"), "{name}");
-            assert_eq!(s.matches("[sistema]").count(), 1, "{name}: {s}");
+            assert_eq!(s.matches("cron_remove").count(), 1, "{name}: {s}");
+            // The verbatim hint sits above it, so its "as linhas acima" cannot
+            // scope over the cron instruction and invite the agent to echo an
+            // internal directive at the merchant.
+            assert!(
+                s.find(VERBATIM_HINT).unwrap() < s.find(SETTLED_CRON_HINT).unwrap(),
+                "{name}: {s}"
+            );
             // Receipt still intact and *before* the system line.
             let rc = s.find("🧾 RECIBO").unwrap_or_else(|| panic!("{name}: {s}"));
             assert!(rc < s.find(SETTLED_CRON_HINT).unwrap(), "{name}: {s}");
             assert!(s.contains("Encaminhe esta mensagem ao cliente"), "{name}");
+        }
+    }
+
+    /// `REF:` and the Solscan URL are the only parts of a status a reader can
+    /// check independently. A live agent answered "a fatura está PENDING"
+    /// in prose and dropped `REF:` entirely, which reads exactly as convincing
+    /// as the version that kept it. The hint must therefore ride on every
+    /// verdict, not just the paid ones, and must name the lines it protects —
+    /// a generic "não reescreva" was what the invoice card started with, and
+    /// it lost to the model.
+    #[test]
+    fn every_verdict_carries_the_verbatim_hint_naming_the_lines_it_protects() {
+        for part in ["REF:", "EXPLORER:", "recibo", "caractere por caractere"] {
+            assert!(VERBATIM_HINT.contains(part), "hint must name {part}");
+        }
+        // It licenses prose around the verdict, so the agent is not pushed into
+        // dumping a raw block at a merchant who asked a plain question.
+        assert!(VERBATIM_HINT.contains("resumir o veredito"), "{VERBATIM_HINT}");
+
+        let sigs = [sig("Sig", true, None)];
+        let cases = [
+            ("PENDING empty", &[][..], None, Some("90")),
+            ("UNDERPAID", &sigs[..], recv("0.01"), Some("90")),
+            ("SIG OK", &sigs[..], None, Some("90")),
+            ("PAID", &sigs[..], recv("90"), Some("90")),
+            ("RECEBIDO", &sigs[..], recv("42.5"), None),
+        ];
+        for (name, s_in, verified, expected) in cases {
+            let s =
+                status_from_signatures_verified("inv-1", "Ref", s_in, verified, expected, false);
+            assert!(s.contains(VERBATIM_HINT), "{name}: {s}");
+            assert_eq!(s.matches(VERBATIM_HINT).count(), 1, "{name}: {s}");
+            // Never inside the forwardable receipt: the merchant sends that
+            // block to a customer, and an internal directive must not travel
+            // with it.
+            if let Some(rc) = s.find("🧾 RECIBO") {
+                assert!(rc < s.find(VERBATIM_HINT).unwrap(), "{name}: {s}");
+            }
         }
     }
 
@@ -640,8 +712,11 @@ mod tests {
             let s =
                 status_from_signatures_verified("inv-1", "Ref", s_in, verified, expected, false);
             assert!(!s.contains("cron_remove"), "{name}: {s}");
-            assert!(!s.contains("[sistema]"), "{name}: {s}");
             assert!(!s.contains("Fatura liquidada"), "{name}: {s}");
+            // The verbatim hint is unconditional and must not be mistaken for
+            // the teardown line: an unpaid invoice still carries a REF the
+            // agent must not retype.
+            assert!(s.ends_with(VERBATIM_HINT), "{name}: {s}");
         }
     }
 
