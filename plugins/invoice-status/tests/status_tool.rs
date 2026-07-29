@@ -162,7 +162,19 @@ fn verified_exact_payment_emits_receipt() {
     let s = evaluate_status_verified(&verified_req(Some("27.27")), &cfg, &sigs, recv("27.27"));
     assert!(s.contains("USDC: PAID ✅"), "{s}");
     assert!(s.contains("RECIBO — INVOICE #inv-001"), "{s}");
-    assert!(s.contains("Encaminhe esta mensagem ao cliente"), "{s}");
+    assert!(s.contains("Encaminhe o bloco abaixo ao cliente"), "{s}");
+    // The receipt is fenced, and the instruction to forward it is not: the
+    // merchant forwards the block, and an instruction addressed to the
+    // merchant must not travel to the customer inside it.
+    let fenced: Vec<&str> = s.split("```").skip(1).step_by(2).collect();
+    assert!(
+        fenced.iter().any(|b| b.contains("RECIBO — INVOICE #inv-001")),
+        "receipt must be inside a fence:\n{s}"
+    );
+    assert!(
+        !fenced.iter().any(|b| b.contains("Encaminhe")),
+        "the forward instruction must stay outside the forwarded block:\n{s}"
+    );
 }
 
 #[test]

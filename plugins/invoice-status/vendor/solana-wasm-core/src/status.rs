@@ -41,12 +41,11 @@ pub fn status_from_signatures(
         let sig = &latest.signature;
         let sig_short = short_label(sig, 12);
         let conf = latest.confirmation_status.as_deref().unwrap_or("unknown");
-        let explorer = format!("https://solscan.io/tx/{sig}");
         let amt_note = expected_usdc
             .map(|a| format!(" esperado={a} USDC"))
             .unwrap_or_default();
         format!(
-            "USDC: PAID ({n} sig ok) latest={sig_short} conf={conf}{amt_note}\nEXPLORER: {explorer}",
+            "USDC: PAID ({n} sig ok) latest={sig_short} conf={conf}{amt_note}",
             n = successful.len(),
         )
     };
@@ -64,7 +63,17 @@ pub fn status_from_signatures(
         (false, false) => "OVERALL: PENDING nos dois trilhos",
     };
 
-    format!("INVOICE: {id}\nREF: {ref_short}\n{usdc_status}\n{pix_status}\n{overall}")
+    // Same shape as the verified builder: verdict outside, checkable
+    // identifiers inside a fence. Divergence between the two would be a trap
+    // for whoever reaches for this one next.
+    let mut out =
+        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: {ref_short}");
+    if let Some(sig) = successful.first().map(|s| s.signature.as_str()) {
+        out.push_str(&format!("\nEXPLORER: https://solscan.io/tx/{sig}"));
+    }
+    out.push_str("\n```\n");
+    out.push_str(VERBATIM_HINT);
+    out
 }
 
 /// Verified USDC settlement detail extracted from `getTransaction`.
@@ -139,7 +148,6 @@ pub fn status_from_signatures_verified(
         let latest = successful[0];
         let sig = latest.signature.as_str();
         let sig_short = short_label(sig, 12);
-        let explorer = format!("https://solscan.io/tx/{sig}");
         let block_time = verified
             .as_ref()
             .and_then(|v| v.block_time)
@@ -150,7 +158,7 @@ pub fn status_from_signatures_verified(
             None => {
                 let text = format!(
                     "USDC: SIG OK (valor não verificado — RPC não retornou a transação) \
-                     latest={sig_short}\nEXPLORER: {explorer}"
+                     latest={sig_short}"
                 );
                 (text, false, None)
             }
@@ -174,7 +182,7 @@ pub fn status_from_signatures_verified(
                     // Successful signature but no USDC reached the merchant.
                     let text = format!(
                         "USDC: PENDING (assinatura sem transferência de USDC ao lojista) \
-                         latest={sig_short}\nEXPLORER: {explorer}"
+                         latest={sig_short}"
                     );
                     (text, false, None)
                 } else if expected_unusable {
@@ -184,7 +192,7 @@ pub fn status_from_signatures_verified(
                     let bad = short_label(&echo_safe(expected_raw.unwrap_or("")), 16);
                     let text = format!(
                         "USDC: SIG OK (recebido {recv_str}, mas expected_usdc inválido: \
-                         {bad} — valor não comparado) latest={sig_short}\nEXPLORER: {explorer}"
+                         {bad} — valor não comparado) latest={sig_short}"
                     );
                     (text, false, None)
                 } else if let Some(cmp) = expected {
@@ -194,7 +202,7 @@ pub fn status_from_signatures_verified(
                             let missing = &cmp.diff;
                             let text = format!(
                                 "USDC: UNDERPAID ⚠️ (recebido {recv_str} de {exp_str} USDC — faltam {missing}) \
-                                 latest={sig_short}\nEXPLORER: {explorer}"
+                                 latest={sig_short}"
                             );
                             (text, false, None)
                         }
@@ -202,7 +210,7 @@ pub fn status_from_signatures_verified(
                             let excess = &cmp.diff;
                             let text = format!(
                                 "USDC: OVERPAID (recebido {recv_str}, esperado {exp_str}; excedente {excess}) ✅ \
-                                 latest={sig_short}\nEXPLORER: {explorer}"
+                                 latest={sig_short}"
                             );
                             let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
                             (text, true, Some(rc))
@@ -210,7 +218,7 @@ pub fn status_from_signatures_verified(
                         Ordering::Equal => {
                             let text = format!(
                                 "USDC: PAID ✅ (recebido {recv_str} de {exp_str} USDC) \
-                                 latest={sig_short}\nEXPLORER: {explorer}"
+                                 latest={sig_short}"
                             );
                             let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
                             (text, true, Some(rc))
@@ -220,7 +228,7 @@ pub fn status_from_signatures_verified(
                     // Funds arrived but no expected amount to compare against.
                     let text = format!(
                         "USDC: RECEBIDO {recv_str} (sem valor esperado para comparar) \
-                         latest={sig_short}\nEXPLORER: {explorer}"
+                         latest={sig_short}"
                     );
                     let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
                     (text, true, Some(rc))
@@ -242,8 +250,23 @@ pub fn status_from_signatures_verified(
         (false, false) => "OVERALL: PENDING (USDC não confirmado por valor)",
     };
 
+    // The verdict is prose the agent may rewrite. Everything a reader could
+    // *check* goes inside a fenced block instead, because asking nicely lost:
+    // v0.3.3 shipped an instruction naming REF: and EXPLORER: as untouchable
+    // and the agent still answered "a fatura está PENDING" in prose with the
+    // reference dropped. A fence does not ask. In every invoice card ever
+    // emitted, including the versions where the agent rewrote everything
+    // around it, the fenced PIX block came through byte-for-byte.
+    //
+    // The cost is real and taken deliberately: a URL inside a fence is not
+    // tappable in Telegram. A link that cannot be tapped can still be copied;
+    // a link the agent deleted is not evidence of anything.
     let mut out =
-        format!("INVOICE: {id}\nREF: {ref_short}\n{usdc_status}\n{pix_status}\n{overall}");
+        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: {ref_short}");
+    if let Some(url) = successful.first().map(|s| s.signature.as_str()) {
+        out.push_str(&format!("\nEXPLORER: https://solscan.io/tx/{url}"));
+    }
+    out.push_str("\n```");
     if let Some(rc) = receipt {
         out.push('\n');
         out.push_str(&rc);
@@ -278,10 +301,10 @@ pub fn status_from_signatures_verified(
 /// Deliberately narrow. It does not demand the whole block verbatim, because
 /// prose around the verdict is genuinely better for the merchant; it pins only
 /// the lines that stop being evidence when they are retyped.
-pub const VERBATIM_HINT: &str = "[sistema] Você pode resumir o veredito com suas palavras. \
-As linhas REF:, EXPLORER: e o bloco de recibo, não: reproduza-as na íntegra, caractere por \
-caractere, ou omita-as por inteiro. São identificadores verificáveis — um caractere trocado \
-aponta para outra transação, ou para nenhuma, e quem lê não tem como perceber.";
+pub const VERBATIM_HINT: &str = "[sistema] Resuma o veredito com suas palavras — é melhor \
+assim. Os blocos de código acima são saída de máquina: repasse-os inteiros, sem reescrever, \
+sem encurtar, sem redigitar. São identificadores verificáveis — um caractere trocado aponta \
+para outra transação, ou para nenhuma, e quem lê não tem como perceber.";
 
 /// Agent-facing instruction appended after the shareable receipt when the
 /// invoice is settled with a confirmed amount. Always the last line, outside
@@ -314,16 +337,28 @@ fn build_receipt(
         Some(ts) => format_unix_utc(ts),
         None => "data indisponível".to_string(),
     };
+    // Fenced for the same reason the evidence block is, and for one more: the
+    // merchant forwards this to whoever paid. A receipt the agent reworded on
+    // the way out is a receipt the customer cannot match against their own
+    // wallet history. The fence also replaces the drawn rules that used to
+    // bound the block.
+    //
+    // The instruction to forward stays *outside* — it is addressed to the
+    // merchant, and it must not travel to the customer along with the receipt.
+    // It leads rather than trails so that a line of prose always separates this
+    // fence from the evidence fence above it: two fences on consecutive lines
+    // read as one empty code block, which would spill the receipt back into
+    // plain text and undo the protection.
     format!(
-        "──────────────────────\n\
+        "👉 Encaminhe o bloco abaixo ao cliente como comprovante.\n\
+         ```\n\
          🧾 RECIBO — INVOICE #{invoice_id}\n\
          ✅ Pago em USDC (Solana)\n\
          Valor: {received_str} USDC (R$ equivalente na fatura)\n\
          Data: {date}\n\
          Tx: {sig_short}\n\
          🔗 https://solscan.io/tx/{sig}\n\
-         ──────────────────────\n\
-         👉 Encaminhe esta mensagem ao cliente como comprovante."
+         ```"
     )
 }
 
@@ -426,7 +461,7 @@ mod tests {
         assert!(s.contains("🧾 RECIBO — INVOICE #inv-001"), "{s}");
         assert!(s.contains("Valor: 27.27 USDC"), "{s}");
         assert!(s.contains("2023-11-14"), "date from block_time: {s}");
-        assert!(s.contains("Encaminhe esta mensagem"), "{s}");
+        assert!(s.contains("Encaminhe o bloco abaixo"), "{s}");
         assert!(s.contains("USDC PAID (valor conferido)"), "{s}");
     }
 
@@ -655,7 +690,7 @@ mod tests {
             // Receipt still intact and *before* the system line.
             let rc = s.find("🧾 RECIBO").unwrap_or_else(|| panic!("{name}: {s}"));
             assert!(rc < s.find(SETTLED_CRON_HINT).unwrap(), "{name}: {s}");
-            assert!(s.contains("Encaminhe esta mensagem ao cliente"), "{name}");
+            assert!(s.contains("Encaminhe o bloco abaixo ao cliente"), "{name}");
         }
     }
 
@@ -667,13 +702,19 @@ mod tests {
     /// a generic "não reescreva" was what the invoice card started with, and
     /// it lost to the model.
     #[test]
-    fn every_verdict_carries_the_verbatim_hint_naming_the_lines_it_protects() {
-        for part in ["REF:", "EXPLORER:", "recibo", "caractere por caractere"] {
-            assert!(VERBATIM_HINT.contains(part), "hint must name {part}");
-        }
+    fn every_verdict_fences_its_checkable_identifiers() {
+        // The hint now points at the fence rather than listing line names: the
+        // fence is what actually holds, and the hint only explains it.
+        assert!(
+            VERBATIM_HINT.contains("blocos de código"),
+            "{VERBATIM_HINT}"
+        );
         // It licenses prose around the verdict, so the agent is not pushed into
         // dumping a raw block at a merchant who asked a plain question.
-        assert!(VERBATIM_HINT.contains("resumir o veredito"), "{VERBATIM_HINT}");
+        assert!(
+            VERBATIM_HINT.contains("Resuma o veredito"),
+            "{VERBATIM_HINT}"
+        );
 
         let sigs = [sig("Sig", true, None)];
         let cases = [
@@ -688,6 +729,33 @@ mod tests {
                 status_from_signatures_verified("inv-1", "Ref", s_in, verified, expected, false);
             assert!(s.contains(VERBATIM_HINT), "{name}: {s}");
             assert_eq!(s.matches(VERBATIM_HINT).count(), 1, "{name}: {s}");
+
+            // REF must sit *inside* a fence, not merely be present. The fence
+            // is the whole mechanism: v0.3.3 asked for REF verbatim in prose
+            // and the agent dropped it anyway.
+            let fenced: Vec<&str> = s.split("```").skip(1).step_by(2).collect();
+            assert!(
+                fenced.iter().any(|b| b.contains("REF: Ref")),
+                "{name}: REF must be inside a code fence:\n{s}"
+            );
+            // Fences must balance, or Telegram renders the rest of the message
+            // as one code block and the verdict becomes unreadable.
+            assert_eq!(s.matches("```").count() % 2, 0, "{name}: {s}");
+            // Two fences on consecutive lines read as one empty code block,
+            // which spills whatever followed back into plain text — exactly
+            // the protection this is here to provide. A line of prose must
+            // always separate them.
+            assert!(
+                !s.contains("```\n```"),
+                "{name}: adjacent fences collapse into an empty block:\n{s}"
+            );
+            // Any explorer URL is fenced too.
+            if s.contains("solscan.io") {
+                assert!(
+                    fenced.iter().any(|b| b.contains("solscan.io")),
+                    "{name}: explorer URL escaped the fence:\n{s}"
+                );
+            }
             // Never inside the forwardable receipt: the merchant sends that
             // block to a customer, and an internal directive must not travel
             // with it.

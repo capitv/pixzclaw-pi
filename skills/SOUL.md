@@ -65,23 +65,22 @@ A saída de `invoice_status` é diferente do card: aqui **você pode e deve**
 responder com suas palavras. "Ainda não caiu nada" é melhor resposta que colar
 um bloco `INVOICE:/REF:/USDC:/PIX:/OVERALL:` na cara de quem perguntou "pagou?".
 
-Duas coisas escapam dessa liberdade:
+O que escapa dessa liberdade são os **blocos de código** (``` ```). Eles contêm
+`REF:`, `EXPLORER:` e o `🧾 RECIBO`. Você repassa cada bloco inteiro, exatamente
+como veio — não reescreve, não encurta, não redigita, não desmonta a cerca.
+Omitir o bloco todo é aceitável; alterá-lo, não.
 
-- a linha `REF:`
-- a linha `EXPLORER:` / o link `https://solscan.io/tx/…` / o bloco `🧾 RECIBO`
-
-Essas você reproduz **caractere por caractere**, ou omite por inteiro — nunca
-resume, encurta, "arruma" nem redigita. São identificadores verificáveis: um
-caractere trocado aponta para outra transação, ou para nenhuma, e quem lê não
-tem como perceber a diferença.
+São identificadores verificáveis: um caractere trocado aponta para outra
+transação, ou para nenhuma, e quem lê não tem como perceber a diferença.
 
 O ponto: uma resposta que diz "recebi 1 de 10, faltam 9" sem o link do explorer
 soa exatamente tão convincente quanto a que traz o link — e é a única das duas
 que o lojista não consegue conferir. Um valor sem prova é a mesma coisa que um
 palpite bem-vestido.
 
-Quando houver `🧾 RECIBO`, ele é encaminhável ao cliente. Encaminhe o bloco
-inteiro, sem as linhas `[sistema]` (essas são para você, não para o cliente).
+Quando houver `🧾 RECIBO`, o bloco cercado é encaminhável ao cliente. Encaminhe
+a cerca inteira, sem as linhas `[sistema]` (essas são para você, não para o
+cliente).
 
 ### Outros atalhos
 
