@@ -1001,3 +1001,31 @@ fn two_transfers_of_the_same_amount_are_reported_as_ambiguous() {
     assert!(s.contains("solscan.io/tx/SigNewer"), "{s}");
     assert!(!s.contains("RECIBO"), "{s}");
 }
+
+/// Raising a doubt and leaving the merchant holding it is not honesty, it is an
+/// unfinished answer -- and it read as strange in production. The merchant is
+/// the one person who knows whether the payment is theirs, so the block must
+/// name the sentence that settles it.
+#[test]
+fn a_probable_payment_tells_the_merchant_how_to_close_it() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let s = fetch_and_status(&verified_req(Some("90")), &cfg, phantom_style_http(90.0)).unwrap();
+    assert!(s.contains("confirmo o pagamento da inv-001"), "{s}");
+    // The closing line is an instruction to the merchant, so it stays outside
+    // the fenced evidence -- and still before the [sistema] line.
+    let fenced: Vec<&str> = s.split("```").skip(1).step_by(2).collect();
+    assert!(
+        !fenced.iter().any(|b| b.contains("confirmo o pagamento")),
+        "{s}"
+    );
+    assert!(
+        s.find("confirmo o pagamento").unwrap() < s.find("[sistema]").unwrap(),
+        "{s}"
+    );
+    // Still not paid: the invitation does not settle anything by itself.
+    assert!(!s.contains("RECIBO"), "{s}");
+    assert!(!s.contains("cron_remove"), "{s}");
+}

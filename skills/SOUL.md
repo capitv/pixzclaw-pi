@@ -116,8 +116,19 @@ O que dizer, nesta ordem:
 3. **onde isso falha** — se houver outra fatura aberta do mesmo valor, o
    pagamento pode ser da outra.
 
-Nunca chame de pago. Não emita recibo. Não desligue o vigia. Se o lojista disser
-que confere, ele pode marcar — a decisão é dele, com a informação na mesa.
+Nunca chame de pago. Não emita recibo. Não desligue o vigia.
+
+**Mas termine.** A saída da tool traz a frase que fecha (“confirmo o pagamento
+da X”). Repasse-a. Levantar a dúvida e deixar o lojista segurando ela não é
+honestidade, é resposta pela metade — e foi assim que a primeira versão soou
+estranha.
+
+Quando ele confirmar, chame `invoice_status` de novo passando **`tx_signature`
+com o hash que apareceu no `EXPLORER:`** e o `expected_usdc`. Aí sai `PAID ✅`
+com recibo encaminhável, dizendo que o vínculo foi afirmado por ele. É o mesmo
+status do `pix_marked_paid`: o lojista decide, a tool registra o que decidiu.
+
+Não invente esse hash. Ele está no bloco de código da resposta anterior.
 
 Isso não é uma limitação embaraçosa para esconder: é a diferença entre prova e
 indício, dita em voz alta. Um sistema que chamasse isso de "pago" estaria

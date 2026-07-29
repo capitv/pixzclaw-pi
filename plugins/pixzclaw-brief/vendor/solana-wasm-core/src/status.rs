@@ -299,6 +299,13 @@ pub struct UnreferencedMatch {
 /// So it says so, in the verdict, in the merchant's language — and emits no
 /// receipt and no watcher teardown, because there is nothing here worth handing
 /// a customer as proof, and the watch must keep running until something is.
+///
+/// It also closes: the merchant is the one person who *does* know whether this
+/// payment is theirs — they issued the invoice, watched it scanned, saw the
+/// amount — so the block ends by naming the sentence that settles it. Stating a
+/// doubt and leaving the reader holding it is not honesty, it is just an
+/// unfinished answer; the first version of this verdict stopped there and read
+/// as strange for exactly that reason.
 pub fn status_unreferenced_match(
     invoice_id: &str,
     reference: &str,
@@ -346,7 +353,9 @@ pub fn status_unreferenced_match(
          ```\n\
          REF: https://solscan.io/account/{reference}\n\
          EXPLORER: https://solscan.io/tx/{sig}\n\
-         ```\n",
+         ```\n\
+         👉 Só você pode fechar isso: se confere que este pagamento é da fatura {id}, \
+         responda “confirmo o pagamento da {id}” e eu registro com comprovante.\n",
         sig = m.signature,
     );
     out.push_str(VERBATIM_HINT);
