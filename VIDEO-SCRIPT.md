@@ -4,7 +4,9 @@
 **Formato:** terminal real (SSH no Raspberry Pi 3B+) + tela do celular (Telegram e Phantom). **Sem slides, sem deck, sem tela de título.**
 **Regra do edital:** *"A real ZeroClaw agent, a real channel (Telegram/Discord), your plugin doing the thing. No slides. Terminal + phone is perfect."*
 
-**A cena que carrega o vídeo:** fatura de **10 USDC**, pagamento **real de 1 USDC** na mainnet, e o agente respondendo **`USDC: UNDERPAID ⚠️ (recebido 1 de 10 USDC — faltam 9)`** — valor lido do delta `pre/postTokenBalances` da transação, não da existência de uma assinatura. Planos 5, 6 e 7 são intocáveis. Se faltar tempo na edição, corte o plano 10 (cron).
+**A cena que carrega o vídeo:** fatura de **R$ 5,50 = 1 USDC**, pagamento **real na mainnet** pelo QR do próprio card — e o agente respondendo **`USDC: PROVÁVEL ⚠️`**. A Phantom descartou a reference, o plugin achou o pagamento assim mesmo na conta do lojista, e **se recusa a chamar de pago**. O Solscan (plano 8) confirma a lacuna na tela: a reference não está entre as contas da transação. O lojista confirma, e só então sai o recibo.
+
+Planos **5, 7, 8 e 9 são intocáveis** — são o argumento inteiro. Se faltar tempo, corte o plano 11 (cron).
 
 ---
 
@@ -116,13 +118,17 @@ e rode o reinstalador antes de continuar.
 na tela, e o custo real da gravação é 1 USDC — o mesmo que o roteiro antigo
 gastava no pagamento parcial.
 
-### 1.2 Sem muleta na frase
+### 1.4 Sem muleta na frase
 
 Uma versão anterior deste roteiro mandava `Use brl_usdc_invoice. Sem redact.`
 junto com a cobrança. Testado no Pi: o agente escolhe a ferramenta sozinho a
-partir de `Cobra R$ 55 do cliente, pedido INV-DEMO-A`, e `Sem redact` nunca fez
+partir de `Cobra R$ 5,50 do cliente, pedido INV-DEMO-A`, e `Sem redact` nunca fez
 nada — a redação de base58 é do host e instrução no chat não a desliga, que é a
 razão de o trilho USDC ser QR-only.
+
+Vale para o plano 6 também: `A INV-DEMO-A pagou?` e nada mais. Sem nome de tool,
+sem `expected_usdc`, sem hash. Um lojista real não digita nome de função, e o
+`expected_usdc` o agente tira da fatura que ele mesmo emitiu.
 
 As duas frases contavam uma história pior que a verdade: que o agente não
 escolhe a ferramenta, e que o operador está contornando algo quebrado. Um
