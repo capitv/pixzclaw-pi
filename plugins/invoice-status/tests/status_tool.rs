@@ -974,3 +974,30 @@ fn a_named_transaction_that_paid_someone_else_says_so_plainly() {
     );
     assert!(!s.contains("RECIBO"), "{s}");
 }
+
+/// Two transfers of the same amount is precisely the case where matching by
+/// amount is worth nothing, so it must be the loudest, not the quietest. An
+/// earlier version stopped at the first hit and answered as confidently as if
+/// there had been one.
+#[test]
+fn two_transfers_of_the_same_amount_are_reported_as_ambiguous() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let mut http = phantom_style_http(90.0);
+    http.ata_sigs = json!([
+        { "signature": "SigNewer", "slot": 2, "err": null, "blockTime": 1_785_346_895u64,
+          "confirmationStatus": "finalized" },
+        { "signature": "SigOlder", "slot": 1, "err": null, "blockTime": 1_785_340_000u64,
+          "confirmationStatus": "finalized" }
+    ]);
+    let s = fetch_and_status(&verified_req(Some("90")), &cfg, http).unwrap();
+
+    assert!(s.contains("USDC: PROVÁVEL"), "{s}");
+    assert!(s.contains("ATENÇÃO: 2 transferências"), "{s}");
+    assert!(s.contains("NÃO há como saber qual"), "{s}");
+    // The newest is the one shown, and it is named so the merchant can look.
+    assert!(s.contains("solscan.io/tx/SigNewer"), "{s}");
+    assert!(!s.contains("RECIBO"), "{s}");
+}

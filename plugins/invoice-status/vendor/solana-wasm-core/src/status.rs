@@ -303,6 +303,7 @@ pub fn status_unreferenced_match(
     invoice_id: &str,
     reference: &str,
     m: &UnreferencedMatch,
+    total_matches: usize,
     pix_marked_paid: bool,
 ) -> String {
     let id = if invoice_id.trim().is_empty() {
@@ -322,12 +323,24 @@ pub fn status_unreferenced_match(
         "PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)"
     };
 
+    // More than one transfer of the same amount is the case where matching by
+    // amount is worth least, so it is the one the merchant most needs told.
+    // Naming a count is also checkable: they can look at their own account.
+    let ambiguity = if total_matches > 1 {
+        format!(
+            " ATENÇÃO: {total_matches} transferências deste mesmo valor entraram na \
+             janela consultada — a mostrada abaixo é a mais recente, e NÃO há como \
+             saber qual delas é desta fatura."
+        )
+    } else {
+        " Se você emitiu outra fatura do mesmo valor, este pagamento pode ser da outra.".to_string()
+    };
+
     let mut out = format!(
         "INVOICE: {id}\n\
          USDC: PROVÁVEL ⚠️ (recebido {recv_str} em {when} — valor, moeda e destino batem \
          com esta fatura, mas a transação NÃO carrega a reference: a carteira do pagador \
-         não a incluiu. Isso é indício, não prova. Se você emitiu outra fatura do mesmo \
-         valor, este pagamento pode ser da outra.)\n\
+         não a incluiu. Isso é indício, não prova.{ambiguity})\n\
          {pix_status}\n\
          OVERALL: PENDING (indício de pagamento, sem prova de vínculo com esta fatura)\n\
          ```\n\

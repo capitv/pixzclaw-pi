@@ -401,11 +401,12 @@ pub fn fetch_and_status<T: HttpTransport>(
     // weaker verdict, it is a wrong one.
     if sigs.is_empty() {
         if let Some(exp) = expected {
-            if let Some(m) = find_unreferenced_payment(&client, cfg, req, exp)? {
+            if let Some((m, hits)) = find_unreferenced_payment(&client, cfg, req, exp)? {
                 return Ok(status_unreferenced_match(
                     &req.invoice_id,
                     &reference,
                     &m,
+                    hits,
                     req.pix_marked_paid,
                 ));
             }
@@ -429,19 +430,26 @@ pub fn fetch_and_status<T: HttpTransport>(
 /// and a tolerance band on top of an amount-only match would let any nearby
 /// transfer claim the invoice.
 ///
-/// Scans newest first and stops at the first exact hit. Older transfers of the
-/// same amount are not better candidates than the newest one, and each extra
-/// candidate costs a `getTransaction` round trip.
+/// Scans the whole window rather than stopping at the first hit, and reports
+/// how many transfers matched.
+///
+/// Stopping early would have picked the newest silently. Two transfers of the
+/// same amount is exactly the case where an amount-only match is worthless, so
+/// it is the one case the merchant most needs told — and the version that
+/// stopped early would have hidden it behind a confident-looking answer.
 fn find_unreferenced_payment<T: HttpTransport>(
     client: &RpcClient<T>,
     cfg: &StatusConfig,
     req: &StatusRequest,
     expected: &str,
-) -> Result<Option<UnreferencedMatch>, String> {
+) -> Result<Option<(UnreferencedMatch, usize)>, String> {
     let merchant = cfg.merchant_solana.trim();
     let accounts = client
         .get_token_accounts_for_mint(merchant, &cfg.usdc_mint)
         .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?;
+
+    let mut newest: Option<UnreferencedMatch> = None;
+    let mut hits = 0usize;
 
     for account in accounts {
         let sigs = client
@@ -465,16 +473,21 @@ fn find_unreferenced_payment<T: HttpTransport>(
                 .map(|c| c.expected_units > 0 && c.ordering == Ordering::Equal)
                 .unwrap_or(false);
             if matches {
-                return Ok(Some(UnreferencedMatch {
-                    signature: sig.signature.clone(),
-                    received_units: r.received_units,
-                    decimals: r.decimals,
-                    block_time: r.block_time.or(sig.block_time),
-                }));
+                hits += 1;
+                // Signatures come back newest first, so the first hit is the
+                // newest one; later hits only raise the count.
+                if newest.is_none() {
+                    newest = Some(UnreferencedMatch {
+                        signature: sig.signature.clone(),
+                        received_units: r.received_units,
+                        decimals: r.decimals,
+                        block_time: r.block_time.or(sig.block_time),
+                    });
+                }
             }
         }
     }
-    Ok(None)
+    Ok(newest.map(|m| (m, hits)))
 }
 
 /// Build a successful fixture signature for host unit tests.
