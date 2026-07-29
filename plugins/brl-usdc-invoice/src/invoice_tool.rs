@@ -165,7 +165,14 @@ fn invoice_label(r: &InvoiceResult) -> String {
 ///   PIX. É a mesma limitação de um QR de maquininha, e o card não finge o
 ///   contrário.
 /// - Link markdown com esquema `solana:` foi descartado: o Telegram valida URL
-///   e pode rejeitar a mensagem inteira, derrubando a fatura junto.
+///   e pode rejeitar a mensagem inteira, derrubando a fatura junto. Com esquema
+///   `https://` é outra história — os QRs são links markdown, medidos no host:
+///   renderizam como rótulo curto clicável e a URL sobrevive ao redact. A URL
+///   crua ocupava ~400 caracteres de lixo percent-encoded no meio do card, e o
+///   card existe para ser encaminhado a um cliente.
+/// - Ênfase usa `*um asterisco*`. O host fala Markdown legado do Telegram, onde
+///   `**dois**` não é negrito: o primeiro par abre e fecha vazio, os asteriscos
+///   somem e o texto sai sem ênfase nenhuma. Medido no card em produção.
 /// - A instrução anti-redact fica FORA do card encaminhável (última linha
 ///   `[sistema]`) para proteger o código PIX e os links de QR.
 /// - `watch_hint` (config `watch_hint`, default `true`) adiciona uma linha só
@@ -195,15 +202,15 @@ pub fn format_invoice_result(
 💰 R$ {brl}  ·  ₮ {usdc} USDC
 
 🇧🇷 *PIX (BRL)*
-📷 QR (toque): {pix_qr}
+📷 [Toque para abrir o QR do PIX]({pix_qr})
 Ou copie o código (toque para copiar):
 ```
 {pix}
 ```
 
 ◎ *Solana Pay (USDC)*
-📷 QR (toque para abrir): {sol_qr}
-Escaneie com Phantom/Solflare de **outro** aparelho — o QR carrega destino, valor e a reference desta fatura.
+📷 [Toque para abrir o QR do Solana Pay]({sol_qr})
+Escaneie com Phantom/Solflare de *outro* aparelho — o QR carrega destino, valor e a reference desta fatura.
 
 👉 *Encaminhe esta mensagem ao cliente*
 Ele paga por PIX *ou* por USDC — os dois valem a fatura #{inv}.
@@ -269,6 +276,48 @@ mod unit_tests {
         }
     }
 
+    /// The QR links are markdown links, so the card shows a short tappable
+    /// label instead of ~400 characters of percent-encoded noise. Two things
+    /// must hold for that to be safe, and both are asserted here: the label
+    /// stays outside the parentheses, and no raw URL is left loose in the text
+    /// (a loose one would defeat the whole point).
+    #[test]
+    fn the_qr_urls_are_hidden_behind_short_tappable_labels() {
+        let r = sample();
+        let s = format_invoice_result(&r, true, "1000", "5.5", true);
+
+        for (label, url) in [
+            ("Toque para abrir o QR do PIX", qr_image_url(&r.pix_payload)),
+            (
+                "Toque para abrir o QR do Solana Pay",
+                qr_image_url(&r.solana_pay_url),
+            ),
+        ] {
+            assert!(
+                s.contains(&format!("[{label}]({url})")),
+                "expected markdown link for {label}:\n{s}"
+            );
+        }
+        // Every qrserver URL in the card is inside a markdown link. If one ever
+        // escapes, the wall of percent-encoding is back on the merchant's
+        // screen and this test is why we would notice.
+        assert_eq!(s.matches("](https://api.qrserver.com").count(), 2, "{s}");
+        assert_eq!(s.matches("https://api.qrserver.com").count(), 2, "{s}");
+    }
+
+    /// The host speaks Telegram's legacy Markdown, where `**x**` is not bold:
+    /// the first pair opens and closes an empty span, so the asterisks vanish
+    /// and the word ships with no emphasis at all. A card in production came
+    /// back that way.
+    #[test]
+    fn emphasis_uses_the_single_asterisk_legacy_markdown_understands() {
+        let s = format_invoice_result(&sample(), true, "1000", "5.5", true);
+        assert!(
+            !s.contains("**"),
+            "`**` renders as nothing in legacy Markdown:\n{s}"
+        );
+    }
+
     #[test]
     fn format_qr_both_rails_no_raw_solana_line() {
         let r = sample();
@@ -321,7 +370,7 @@ mod unit_tests {
         assert!(s.contains("🇧🇷 *PIX (BRL)*"));
         assert!(s.contains("◎ *Solana Pay (USDC)*"));
         assert!(s.contains("toque para copiar"));
-        assert!(s.contains("de **outro** aparelho"));
+        assert!(s.contains("de *outro* aparelho"));
         assert!(s.contains("Encaminhe esta mensagem ao cliente"));
     }
 
