@@ -39,6 +39,7 @@ fn evaluate_status_unpaid() {
     let cfg = StatusConfig::from_map(&section(&[("merchant_solana", MERCHANT)]));
     let req = StatusRequest {
         invoice_id: INVOICE_ID.into(),
+        tx_signature: None,
         reference: None,
         expected_usdc: Some("10".into()),
         pix_marked_paid: false,
@@ -56,6 +57,7 @@ fn evaluate_status_with_successful_sig() {
     let cfg = StatusConfig::from_map(&section(&[("merchant_solana", MERCHANT)]));
     let req = StatusRequest {
         invoice_id: INVOICE_ID.into(),
+        tx_signature: None,
         reference: None,
         expected_usdc: Some("12.5".into()),
         pix_marked_paid: false,
@@ -80,6 +82,7 @@ fn evaluate_status_pix_marked_paid() {
     let cfg = StatusConfig::from_map(&section(&[("merchant_solana", MERCHANT)]));
     let req = StatusRequest {
         invoice_id: "inv-2".into(),
+        tx_signature: None,
         reference: Some("RefXYZ".into()),
         expected_usdc: None,
         pix_marked_paid: true,
@@ -103,6 +106,7 @@ fn missing_merchant_fails_resolve_when_no_reference() {
     let cfg = StatusConfig::from_map(&HashMap::new());
     let req = StatusRequest {
         invoice_id: INVOICE_ID.into(),
+        tx_signature: None,
         reference: None,
         expected_usdc: None,
         pix_marked_paid: false,
@@ -148,6 +152,7 @@ fn recv(amount: &str) -> Option<UsdcReceipt> {
 fn verified_req(expected: Option<&str>) -> StatusRequest {
     StatusRequest {
         invoice_id: INVOICE_ID.into(),
+        tx_signature: None,
         reference: None,
         expected_usdc: expected.map(|s| s.to_string()),
         pix_marked_paid: false,
@@ -861,4 +866,111 @@ fn no_expected_amount_means_no_unreferenced_scan_at_all() {
     let s = fetch_and_status(&verified_req(None), &cfg, http).unwrap();
     assert!(s.contains("USDC: PENDING"), "{s}");
     assert!(!s.contains("PROVÁVEL"), "{s}");
+}
+
+// ── Transaction named by the operator ("paguei, o hash é este") ─────────────
+
+fn declared_req(sig: &str, expected: Option<&str>) -> StatusRequest {
+    StatusRequest {
+        invoice_id: INVOICE_ID.into(),
+        tx_signature: Some(sig.to_string()),
+        expected_usdc: expected.map(|s| s.to_string()),
+        ..StatusRequest::default()
+    }
+}
+
+/// Transport for the named-transaction path: one getTransaction and nothing
+/// else. If a signature sweep ever creeps back in, `calls` catches it.
+struct DeclaredTxHttp {
+    tx: Value,
+    calls: RefCell<Vec<String>>,
+}
+
+impl HttpTransport for DeclaredTxHttp {
+    fn post_json(&self, _url: &str, body: &Value) -> Result<Value, RpcError> {
+        let method = body["method"].as_str().unwrap_or_default().to_string();
+        self.calls.borrow_mut().push(method.clone());
+        match method.as_str() {
+            "getTransaction" => Ok(json!({ "jsonrpc": "2.0", "id": 1, "result": self.tx })),
+            other => Err(RpcError::new(format!("unexpected method: {other}"))),
+        }
+    }
+}
+
+fn declared_http(paid_ui: f64) -> DeclaredTxHttp {
+    DeclaredTxHttp {
+        tx: json!({
+            "blockTime": 1_785_346_895u64,
+            "slot": 435_991_632u64,
+            "meta": {
+                "err": null,
+                "preTokenBalances": [ token_balance(MINT, MERCHANT, 0.0) ],
+                "postTokenBalances": [ token_balance(MINT, MERCHANT, paid_ui) ]
+            }
+        }),
+        calls: RefCell::new(Vec::new()),
+    }
+}
+
+/// Naming the transaction settles the invoice and costs exactly one RPC call —
+/// there is nothing left to search for once someone said which transfer it was.
+#[test]
+fn a_named_transaction_is_checked_directly_and_only_once() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let http = declared_http(90.0);
+    let s = fetch_and_status(&declared_req("3UQpJTip111", Some("90")), &cfg, http).unwrap();
+
+    assert!(s.contains("USDC: PAID ✅"), "{s}");
+    assert!(s.contains("valor conferido na transação informada"), "{s}");
+    // The chain proved the money; it did not prove the invoice. Saying so is
+    // the whole point of having a separate verdict for this path.
+    assert!(s.contains("informado por você, não pela chain"), "{s}");
+    assert!(
+        s.contains("RECIBO"),
+        "the amount is verified, so a receipt: {s}"
+    );
+    assert!(s.contains("solscan.io/tx/3UQpJTip111"), "{s}");
+}
+
+/// A named transaction that does not cover the invoice is not rounded up.
+#[test]
+fn a_named_transaction_short_of_the_invoice_is_underpaid() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let s = fetch_and_status(&declared_req("Sig", Some("90")), &cfg, declared_http(1.0)).unwrap();
+    assert!(s.contains("USDC: UNDERPAID ⚠️"), "{s}");
+    assert!(s.contains("faltam"), "{s}");
+    assert!(!s.contains("RECIBO"), "{s}");
+    assert!(!s.contains("cron_remove"), "watch keeps running: {s}");
+}
+
+/// The likeliest operator mistake is pasting the wrong hash. That must read as
+/// "this is not your payment", not as a shortfall of this invoice.
+#[test]
+fn a_named_transaction_that_paid_someone_else_says_so_plainly() {
+    let cfg = StatusConfig::from_map(&section(&[
+        ("merchant_solana", MERCHANT),
+        ("usdc_mint", MINT),
+    ]));
+    let http = DeclaredTxHttp {
+        tx: json!({
+            "blockTime": 1_785_346_895u64,
+            "slot": 1,
+            "meta": { "err": null, "preTokenBalances": [], "postTokenBalances": [] }
+        }),
+        calls: RefCell::new(Vec::new()),
+    };
+    let s = fetch_and_status(&declared_req("WrongSig", Some("90")), &cfg, http).unwrap();
+    assert!(s.contains("NÃO CONFERE"), "{s}");
+    assert!(s.contains("colou o hash certo"), "{s}");
+    assert!(
+        !s.contains("UNDERPAID"),
+        "not a shortfall of this invoice: {s}"
+    );
+    assert!(!s.contains("RECIBO"), "{s}");
 }

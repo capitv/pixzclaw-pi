@@ -340,6 +340,130 @@ pub fn status_unreferenced_match(
     out
 }
 
+/// Status for a transaction the operator named, rather than one the tool found.
+///
+/// The natural human move when a wallet drops the reference: the payer sends
+/// the transaction hash. Phantom shows it, it is one paste, and it is strictly
+/// better evidence than matching by amount — each customer hands over *their*
+/// transaction, so two invoices of the same value stop colliding.
+///
+/// What the chain proves here is the money: this transaction moved exactly this
+/// many units of this mint into this merchant's account. What it does not prove
+/// is the invoice: nothing on-chain ties the transfer to this id, because the
+/// reference is not in it. That link is the operator's assertion — the same
+/// standing as `pix_marked_paid`, and labelled as such rather than blurred into
+/// the verdict.
+///
+/// `received` is `None` when `getTransaction` could not be read exactly. That is
+/// not "no payment", it is "no answer", and it degrades instead of guessing.
+pub fn status_from_declared_tx(
+    invoice_id: &str,
+    reference: &str,
+    signature: &str,
+    received: Option<UsdcReceipt>,
+    expected_usdc: Option<&str>,
+    pix_marked_paid: bool,
+) -> String {
+    let id = if invoice_id.trim().is_empty() {
+        "(unknown)"
+    } else {
+        invoice_id.trim()
+    };
+    let origin = "vínculo com a fatura informado por você, não pela chain: \
+                  esta transação não carrega a reference";
+
+    let (usdc_status, settled, receipt) = match &received {
+        None => (
+            "USDC: SIG OK (transação informada não pôde ser lida pelo RPC — valor não conferido)"
+                .to_string(),
+            false,
+            None,
+        ),
+        Some(v) if v.received_units == 0 => (
+            "USDC: NÃO CONFERE ❌ (a transação informada existe, mas não transferiu \
+             esta moeda para a sua carteira. Confira se colou o hash certo.)"
+                .to_string(),
+            false,
+            None,
+        ),
+        Some(v) => {
+            let recv_str = format_minor_units(v.received_units, v.decimals);
+            let expected_raw = expected_usdc.map(str::trim).filter(|s| !s.is_empty());
+            let cmp = expected_raw.and_then(|s| {
+                compare_units_to_decimal(v.received_units, v.decimals, s)
+                    .ok()
+                    .filter(|c| c.expected_units > 0)
+            });
+            match cmp {
+                None => (
+                    format!("USDC: RECEBIDO {recv_str} na transação informada ({origin})"),
+                    true,
+                    Some(build_receipt(id, &recv_str, v.block_time, signature)),
+                ),
+                Some(c) => match c.ordering {
+                    Ordering::Less => (
+                        format!(
+                            "USDC: UNDERPAID ⚠️ (a transação informada trouxe {recv_str} de \
+                             {exp} USDC — faltam {miss})",
+                            exp = c.expected_fmt,
+                            miss = c.diff
+                        ),
+                        false,
+                        None,
+                    ),
+                    Ordering::Greater => (
+                        format!(
+                            "USDC: OVERPAID ✅ (a transação informada trouxe {recv_str}, \
+                             esperado {exp}; excedente {ex} — {origin})",
+                            exp = c.expected_fmt,
+                            ex = c.diff
+                        ),
+                        true,
+                        Some(build_receipt(id, &recv_str, v.block_time, signature)),
+                    ),
+                    Ordering::Equal => (
+                        format!(
+                            "USDC: PAID ✅ (valor conferido na transação informada: {recv_str} \
+                             de {exp} USDC — {origin})",
+                            exp = c.expected_fmt
+                        ),
+                        true,
+                        Some(build_receipt(id, &recv_str, v.block_time, signature)),
+                    ),
+                },
+            }
+        }
+    };
+
+    let pix_status = if pix_marked_paid {
+        "PIX: PAID (marcado pelo operador — SPI/banco NÃO verificado por esta tool)"
+    } else {
+        "PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)"
+    };
+    let overall = if settled {
+        "OVERALL: USDC conferido na transação informada; vínculo com a fatura afirmado pelo operador"
+    } else {
+        "OVERALL: PENDING (transação informada não fecha esta fatura)"
+    };
+
+    let mut out = format!(
+        "INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n\
+         ```\nREF: https://solscan.io/account/{reference}\n\
+         EXPLORER: https://solscan.io/tx/{signature}\n```"
+    );
+    if let Some(rc) = receipt {
+        out.push('\n');
+        out.push_str(&rc);
+    }
+    out.push('\n');
+    out.push_str(VERBATIM_HINT);
+    if settled {
+        out.push('\n');
+        out.push_str(SETTLED_CRON_HINT);
+    }
+    out
+}
+
 /// Agent-facing instruction appended to every status block.
 ///
 /// The block is read by a model before it reaches a human, and a model

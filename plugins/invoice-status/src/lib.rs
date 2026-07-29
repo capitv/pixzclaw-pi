@@ -45,6 +45,8 @@ mod component {
         #[serde(default)]
         invoice_id: String,
         #[serde(default)]
+        tx_signature: Option<String>,
+        #[serde(default)]
         reference: Option<String>,
         #[serde(default)]
         expected_usdc: Option<String>,
@@ -118,6 +120,10 @@ mod component {
                         "type": "string",
                         "description": "Invoice id used when deriving the Solana Pay reference (with merchant_solana from config). Must be exactly the unique id the invoice was issued under: the reference is a function of it, so two sales sharing an id cannot be told apart on-chain."
                     },
+                    "tx_signature": {
+                        "type": "string",
+                        "description": "Optional transaction signature (base58) the operator or payer names as the payment for this invoice. Use it whenever someone says \"I paid, here is the hash\". It short-circuits the search: exactly one getTransaction call, checking how much of usdc_mint that transaction moved into merchant_solana, compared against expected_usdc. Needed because a wallet may drop the Solana Pay reference — Phantom builds a plain transfer from the URI — leaving nothing on the reference to find. The chain proves the money moved; it does not prove the transfer belongs to this invoice, and the verdict says so."
+                    },
                     "reference": {
                         "type": "string",
                         "description": "Optional explicit Solana Pay reference (base58). When set, skips derivation."
@@ -179,6 +185,7 @@ mod component {
             let cfg = StatusConfig::from_map(&parsed.config);
             let req = StatusRequest {
                 invoice_id: parsed.invoice_id,
+                tx_signature: parsed.tx_signature,
                 reference: parsed.reference,
                 expected_usdc: parsed.expected_usdc,
                 pix_marked_paid: parsed.pix_marked_paid,

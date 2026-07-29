@@ -11,9 +11,9 @@ use std::collections::HashMap;
 use serde_json::Value;
 use solana_wasm_core::amount::compare_units_to_decimal;
 use solana_wasm_core::{
-    derive_reference, status_from_signatures, status_from_signatures_verified,
-    status_unreferenced_match, HttpTransport, RpcClient, SignatureInfo, UnreferencedMatch,
-    UsdcReceipt, USDC_MINT,
+    derive_reference, status_from_declared_tx, status_from_signatures,
+    status_from_signatures_verified, status_unreferenced_match, HttpTransport, RpcClient,
+    SignatureInfo, UnreferencedMatch, UsdcReceipt, USDC_MINT,
 };
 
 /// Default Solana mainnet public RPC (operator should override in production).
@@ -86,6 +86,13 @@ impl StatusConfig {
 #[derive(Debug, Clone)]
 pub struct StatusRequest {
     pub invoice_id: String,
+    /// Transaction the operator names as the payment for this invoice.
+    ///
+    /// The natural move when the payer's wallet dropped the reference: they
+    /// send the hash. Strictly better evidence than matching by amount, because
+    /// each customer hands over *their* transaction, so two invoices of the
+    /// same value stop colliding.
+    pub tx_signature: Option<String>,
     pub reference: Option<String>,
     pub expected_usdc: Option<String>,
     pub pix_marked_paid: bool,
@@ -96,6 +103,7 @@ impl Default for StatusRequest {
     fn default() -> Self {
         Self {
             invoice_id: String::new(),
+            tx_signature: None,
             reference: None,
             expected_usdc: None,
             pix_marked_paid: false,
@@ -238,6 +246,35 @@ pub fn fetch_and_status<T: HttpTransport>(
     }
 
     let client = RpcClient::new(cfg.rpc_url.trim(), http);
+
+    // An operator-named transaction short-circuits the search entirely: there
+    // is nothing to look for once someone has said which transaction it is.
+    // One RPC call instead of a signature sweep, and a verdict that separates
+    // what the chain proved (the money moved) from what the operator asserted
+    // (that it was for this invoice).
+    if let Some(sig) = req
+        .tx_signature
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        let received = client
+            .get_transaction(sig, &cfg.usdc_mint, cfg.merchant_solana.trim())
+            .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?
+            .map(|r| UsdcReceipt {
+                received_units: r.received_units,
+                decimals: r.decimals,
+                block_time: r.block_time,
+            });
+        return Ok(status_from_declared_tx(
+            &req.invoice_id,
+            &reference,
+            sig,
+            received,
+            req.expected_usdc.as_deref(),
+            req.pix_marked_paid,
+        ));
+    }
     let sigs = client
         .get_signatures_for_address(&reference, req.effective_lookback())
         .map_err(|e| format!("invoice_status: rpc failed: {}", e.message))?;
