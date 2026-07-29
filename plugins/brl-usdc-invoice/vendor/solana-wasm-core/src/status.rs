@@ -24,7 +24,6 @@ pub fn status_from_signatures(
     } else {
         invoice_id.trim()
     };
-    let ref_short = short_label(reference, 12);
 
     let successful: Vec<&SignatureInfo> = sigs.iter().filter(|s| s.is_success()).collect();
     let failed = sigs.len().saturating_sub(successful.len());
@@ -38,14 +37,12 @@ pub fn status_from_signatures(
         }
     } else {
         let latest = successful[0];
-        let sig = &latest.signature;
-        let sig_short = short_label(sig, 12);
         let conf = latest.confirmation_status.as_deref().unwrap_or("unknown");
         let amt_note = expected_usdc
             .map(|a| format!(" esperado={a} USDC"))
             .unwrap_or_default();
         format!(
-            "USDC: PAID ({n} sig ok) latest={sig_short} conf={conf}{amt_note}",
+            "USDC: PAID ({n} sig ok) conf={conf}{amt_note}",
             n = successful.len(),
         )
     };
@@ -67,7 +64,7 @@ pub fn status_from_signatures(
     // identifiers inside a fence. Divergence between the two would be a trap
     // for whoever reaches for this one next.
     let mut out =
-        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: {ref_short}");
+        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: https://solscan.io/account/{reference}");
     if let Some(sig) = successful.first().map(|s| s.signature.as_str()) {
         out.push_str(&format!("\nEXPLORER: https://solscan.io/tx/{sig}"));
     }
@@ -131,7 +128,6 @@ pub fn status_from_signatures_verified(
     } else {
         invoice_id.trim()
     };
-    let ref_short = short_label(reference, 12);
 
     let successful: Vec<&SignatureInfo> = sigs.iter().filter(|s| s.is_success()).collect();
     let failed = sigs.len().saturating_sub(successful.len());
@@ -147,7 +143,6 @@ pub fn status_from_signatures_verified(
     } else {
         let latest = successful[0];
         let sig = latest.signature.as_str();
-        let sig_short = short_label(sig, 12);
         let block_time = verified
             .as_ref()
             .and_then(|v| v.block_time)
@@ -156,10 +151,8 @@ pub fn status_from_signatures_verified(
         match &verified {
             // getTransaction unavailable / no meta → honest degrade.
             None => {
-                let text = format!(
-                    "USDC: SIG OK (valor não verificado — RPC não retornou a transação) \
-                     latest={sig_short}"
-                );
+                let text =
+                    format!("USDC: SIG OK (valor não verificado — RPC não retornou a transação)");
                 (text, false, None)
             }
             Some(v) => {
@@ -180,10 +173,8 @@ pub fn status_from_signatures_verified(
 
                 if v.received_units == 0 {
                     // Successful signature but no USDC reached the merchant.
-                    let text = format!(
-                        "USDC: PENDING (assinatura sem transferência de USDC ao lojista) \
-                         latest={sig_short}"
-                    );
+                    let text =
+                        format!("USDC: PENDING (assinatura sem transferência de USDC ao lojista)");
                     (text, false, None)
                 } else if expected_unusable {
                     // An expectation was stated and could not be used. There is
@@ -192,7 +183,7 @@ pub fn status_from_signatures_verified(
                     let bad = short_label(&echo_safe(expected_raw.unwrap_or("")), 16);
                     let text = format!(
                         "USDC: SIG OK (recebido {recv_str}, mas expected_usdc inválido: \
-                         {bad} — valor não comparado) latest={sig_short}"
+                         {bad} — valor não comparado)"
                     );
                     (text, false, None)
                 } else if let Some(cmp) = expected {
@@ -201,36 +192,30 @@ pub fn status_from_signatures_verified(
                         Ordering::Less => {
                             let missing = &cmp.diff;
                             let text = format!(
-                                "USDC: UNDERPAID ⚠️ (recebido {recv_str} de {exp_str} USDC — faltam {missing}) \
-                                 latest={sig_short}"
+                                "USDC: UNDERPAID ⚠️ (recebido {recv_str} de {exp_str} USDC — faltam {missing})"
                             );
                             (text, false, None)
                         }
                         Ordering::Greater => {
                             let excess = &cmp.diff;
                             let text = format!(
-                                "USDC: OVERPAID (recebido {recv_str}, esperado {exp_str}; excedente {excess}) ✅ \
-                                 latest={sig_short}"
+                                "USDC: OVERPAID (recebido {recv_str}, esperado {exp_str}; excedente {excess}) ✅"
                             );
-                            let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
+                            let rc = build_receipt(id, &recv_str, block_time, sig);
                             (text, true, Some(rc))
                         }
                         Ordering::Equal => {
-                            let text = format!(
-                                "USDC: PAID ✅ (recebido {recv_str} de {exp_str} USDC) \
-                                 latest={sig_short}"
-                            );
-                            let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
+                            let text =
+                                format!("USDC: PAID ✅ (recebido {recv_str} de {exp_str} USDC)");
+                            let rc = build_receipt(id, &recv_str, block_time, sig);
                             (text, true, Some(rc))
                         }
                     }
                 } else {
                     // Funds arrived but no expected amount to compare against.
-                    let text = format!(
-                        "USDC: RECEBIDO {recv_str} (sem valor esperado para comparar) \
-                         latest={sig_short}"
-                    );
-                    let rc = build_receipt(id, &recv_str, block_time, sig, &sig_short);
+                    let text =
+                        format!("USDC: RECEBIDO {recv_str} (sem valor esperado para comparar)");
+                    let rc = build_receipt(id, &recv_str, block_time, sig);
                     (text, true, Some(rc))
                 }
             }
@@ -262,7 +247,7 @@ pub fn status_from_signatures_verified(
     // tappable in Telegram. A link that cannot be tapped can still be copied;
     // a link the agent deleted is not evidence of anything.
     let mut out =
-        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: {ref_short}");
+        format!("INVOICE: {id}\n{usdc_status}\n{pix_status}\n{overall}\n```\nREF: https://solscan.io/account/{reference}");
     if let Some(url) = successful.first().map(|s| s.signature.as_str()) {
         out.push_str(&format!("\nEXPLORER: https://solscan.io/tx/{url}"));
     }
@@ -331,7 +316,6 @@ fn build_receipt(
     received_str: &str,
     block_time: Option<i64>,
     sig: &str,
-    sig_short: &str,
 ) -> String {
     let date = match block_time {
         Some(ts) => format_unix_utc(ts),
@@ -356,7 +340,6 @@ fn build_receipt(
          ✅ Pago em USDC (Solana)\n\
          Valor: {received_str} USDC (R$ equivalente na fatura)\n\
          Data: {date}\n\
-         Tx: {sig_short}\n\
          🔗 https://solscan.io/tx/{sig}\n\
          ```"
     )
@@ -735,7 +718,9 @@ mod tests {
             // and the agent dropped it anyway.
             let fenced: Vec<&str> = s.split("```").skip(1).step_by(2).collect();
             assert!(
-                fenced.iter().any(|b| b.contains("REF: Ref")),
+                fenced
+                    .iter()
+                    .any(|b| b.contains("REF: https://solscan.io/account/Ref")),
                 "{name}: REF must be inside a code fence:\n{s}"
             );
             // Fences must balance, or Telegram renders the rest of the message
@@ -763,6 +748,53 @@ mod tests {
                 assert!(rc < s.find(VERBATIM_HINT).unwrap(), "{name}: {s}");
             }
         }
+    }
+
+    /// The third distinct way this status lost its evidence, and the first fix
+    /// that addresses the class instead of the case.
+    ///
+    /// The host redacts high-entropy base58 anywhere in chat *except* inside an
+    /// `https://` URL. A 12-character truncation was dodging that by luck of
+    /// the prefix: the same code produced `REF: FEXKHAX8CDf…` on one invoice
+    /// and `REF: [REDACTED_HIGH_ENTROPY_TOKEN]` on the next. Fencing did not
+    /// help — the redactor does not care about code blocks, it is a different
+    /// threat from the agent rewriting things.
+    ///
+    /// So no identifier travels as bare text. Each one is a URL, which is also
+    /// how it stops being truncated: `REF:` now carries the whole reference and
+    /// points at the account page that proves it.
+    #[test]
+    fn no_identifier_travels_outside_an_https_url() {
+        let reference = "A6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd";
+        let signature = "5xTdLmBQ1qWZ8vPmcVzKjR3nHgYbEwUaSfN2oXpJdCtA";
+        let sigs = [sig(signature, true, None)];
+        let cases = [
+            ("PENDING", &[][..], None, Some("90")),
+            ("SIG OK", &sigs[..], None, Some("90")),
+            ("UNDERPAID", &sigs[..], recv("0.01"), Some("90")),
+            ("PAID", &sigs[..], recv("90"), Some("90")),
+        ];
+        for (name, s_in, verified, expected) in cases {
+            let s = status_from_signatures_verified(
+                "inv-1", reference, s_in, verified, expected, false,
+            );
+            for id in [reference, signature] {
+                for (i, _) in s.match_indices(id) {
+                    let before = &s[..i];
+                    assert!(
+                        before.ends_with("solscan.io/account/")
+                            || before.ends_with("solscan.io/tx/"),
+                        "{name}: {id} appears as bare text; the host redacts that:\n{s}"
+                    );
+                }
+            }
+        }
+        // And the reference is carried whole. A truncated identifier cannot be
+        // pasted into an explorer, so it was never evidence of anything — it
+        // only looked like it.
+        let s = status_from_signatures_verified("inv-1", reference, &sigs, None, None, false);
+        assert!(s.contains(reference), "{s}");
+        assert!(!s.contains('…'), "no truncated identifiers remain:\n{s}");
     }
 
     /// Not settled (or value unconfirmed) → the watcher must keep running.
