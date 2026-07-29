@@ -114,8 +114,26 @@ fn empty_to_none(v: Option<String>) -> Option<String> {
 pub fn qr_image_url(data: &str) -> String {
     format!(
         "https://api.qrserver.com/v1/create-qr-code/?size=640x640&margin=4&data={}",
-        url_encode(data)
+        markdown_safe_url_encode(data)
     )
+}
+
+/// The QR link is the one thing on the card a customer taps, and it lands in a
+/// chat that parses Markdown. `url_encode` is an RFC 3986 unreserved allowlist,
+/// so `*`, `` ` `` and `[` already come out percent-encoded — but `_` and `~`
+/// are unreserved and pass through untouched. A merchant configured as
+/// `Loja_Centro_SP` therefore drops two underscores into the URL, Telegram
+/// reads them as italics and eats them, and the link the customer taps is no
+/// longer the link we built. The failure is silent and depends on the
+/// merchant's name, so it would have shipped fine and broken at someone else's
+/// counter.
+///
+/// Percent-encoding them costs nothing: RFC 3986 §2.3 requires a decoder to
+/// treat `%5F` and `_` as the same octet, so qrserver receives identical bytes.
+/// Applying this to the already-encoded string is safe because a percent escape
+/// is `%` plus two hex digits — neither `_` nor `~` can appear inside one.
+fn markdown_safe_url_encode(s: &str) -> String {
+    url_encode(s).replace('_', "%5F").replace('~', "%7E")
 }
 
 /// Short invoice id for display (from memo).
@@ -222,6 +240,32 @@ mod unit_tests {
             amount_brl: "10.00".into(),
             amount_usdc: "1.82".into(),
             summary: "x".into(),
+        }
+    }
+
+    /// The QR link is emitted into a Markdown-parsed chat, so any character
+    /// Telegram treats as a formatting mark must not reach it raw. `_` is the
+    /// one that slips through an RFC 3986 unreserved allowlist, and a merchant
+    /// name is merchant-controlled text that routinely contains one.
+    #[test]
+    fn a_merchant_name_with_underscores_cannot_break_the_qr_link() {
+        let url = qr_image_url("solana:X?label=Loja_Centro_SP&memo=a~b");
+        assert!(
+            !url.contains('_'),
+            "an underscore reaching the chat is read as italics and silently \
+             rewrites the link the customer taps:\n{url}"
+        );
+        assert!(!url.contains('~'), "{url}");
+        assert!(url.contains("Loja%5FCentro%5FSP"), "{url}");
+        // Percent-encoding an unreserved octet does not change what the QR
+        // endpoint decodes, so the QR still carries the same payment URI.
+        assert!(url.contains("a%7Eb"), "{url}");
+        // The Markdown-active characters outside the allowlist were already
+        // handled by url_encode; assert it so a future encoder swap cannot
+        // quietly regress them.
+        let active = qr_image_url("a*b`c[d]e");
+        for ch in ['*', '`', '[', ']'] {
+            assert!(!active.contains(ch), "{ch} leaked into the link:\n{active}");
         }
     }
 
