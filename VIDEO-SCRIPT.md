@@ -15,38 +15,106 @@ Legenda da coluna **Fonte**: `PI` = terminal SSH no Raspberry Pi (desktop) · `T
 | # | Timecode | Fonte | O que aparece na tela | Narração (bloco EN/PT correspondente) |
 |---|---|---|---|---|
 | 1 | 0:00–0:10 | PI | Terminal já logado no Pi, prompt limpo. Digitar e rodar: `uname -m && zeroclaw plugin list`. Saída mostra `aarch64` e os 3 plugins: `brl-usdc-invoice`, `invoice-status`, `pixzclaw-brief`. | **N1** |
-| 2 | 0:10–0:26 | TG | Chat do bot vazio. O lojista digita e envia: `Cobra R$ 55 do cliente, pedido INV-DEMO-A`. O ZeroClaw pede aprovação da tool — **deixe aparecer**, é a superfície de custódia visível na tela. Aprove. O card da fatura aparece: `🦞 PixZClaw — Fatura #INV-DEMO-A` · `💰 R$ 55.00 · ₮ 10 USDC`. | **N2** |
-| 3 | 0:26–0:44 | TG | Scroll lento pelo card: bloco `🇧🇷 PIX (BRL)` com o QR e o copia-e-cola em code block; bloco `◎ Solana Pay (USDC)` com o QR. Parar com os dois trilhos visíveis na mesma tela. | **N3** |
-| 4 | 0:44–0:56 | TG | Segue no card. Destaque (dedo/scroll) no rodapé: `🔒 teto R$ 1000 · destino travado=sim`. Sem edição gráfica — só a rolagem parando na linha. | **N4** |
-| 5 | 0:56–1:14 | PH | Phantom abre a requisição de transferência (Solana Pay parcial — ver §4, item "QR de pagamento parcial"): destino = pubkey do lojista, `1 USDC`. Toque em confirmar. Tela de sucesso. **Pagamento real, mainnet.** | **N5** |
-| 6 | 1:14–1:26 | TG | De volta ao Telegram. O lojista envia: `A INV-DEMO-A pagou? Use invoice_status com expected_usdc 10.` Aparece o indicador de "digitando". | **N6** |
-| 7 | 1:26–1:44 | TG | A resposta chega. Bloco visível **por inteiro** e parado na tela (ver §1.1 para o texto esperado, palavra por palavra). Ficar 4–5 s parado na linha `USDC: UNDERPAID ⚠️ …`. | **N7** |
-| 8 | 1:44–1:58 | WEB | Abrir no navegador do desktop o link `EXPLORER:` que o próprio plugin devolveu (Solscan). Mostrar a transação e o valor transferido: `1 USDC`. Zoom na linha de transferência. | **N8** |
-| 9 | 1:58–2:14 | PI | Terminal: `cat ~/plugins/invoice-status/manifest.toml`. Parar na linha `permissions = ["http_client", "config_read"]` — nessa ordem, com os dois comentários acima dela explicando cada uma. | **N9** |
-| 10 | 2:14–2:34 | TG | Telegram: `avisa quando a INV-DEMO-A pagar` → resposta do agente confirmando o vigia. Em seguida: `quais lembretes tenho?` → o agente lista `pixzclaw-watch-INV-DEMO-A`. | **N10** |
-| 11 | 2:34–2:56 | PI | Terminal, comando final já digitado: `zeroclaw plugin list` (volta ao plano de abertura, fecha o círculo). Cursor piscando no fim. Fade de áudio, corte seco no vídeo. | **N11** |
+| 2 | 0:10–0:26 | TG | Chat do bot vazio. O lojista digita e envia: `Cobra R$ 5,50 do cliente, pedido INV-DEMO-A`. O ZeroClaw pede aprovação da tool — **deixe aparecer**, é a superfície de custódia visível na tela. Aprove. O card aparece: `🦞 PixZClaw — Fatura #INV-DEMO-A` · `💰 R$ 5.50 · ₮ 1 USDC`. | **N2** |
+| 3 | 0:26–0:42 | TG | Scroll lento pelo card: bloco `🇧🇷 PIX (BRL)` com o link do QR e o copia-e-cola em code block; bloco `◎ Solana Pay (USDC)` com o link do QR. Parar com os dois trilhos visíveis na mesma tela. | **N3** |
+| 4 | 0:42–0:52 | TG | Segue no card. Rolagem parando no rodapé: `🔒 teto R$ 1000 · destino travado=sim`. Sem edição gráfica. | **N4** |
+| 5 | 0:52–1:10 | PH | Tocar no link `📷 Toque para abrir o QR do Solana Pay`, ler o QR com a câmera do **segundo** aparelho. A Phantom abre já com destino e valor preenchidos: `1 USDC`. Confirmar. Tela de sucesso. **Pagamento real, mainnet.** | **N5** |
+| 6 | 1:10–1:20 | TG | De volta ao Telegram. O lojista envia só: `A INV-DEMO-A pagou?`. Indicador de "digitando". | **N6** |
+| 7 | 1:20–1:42 | TG | **Plano principal.** A resposta chega: `USDC: PROVÁVEL ⚠️` com a ressalva inteira e a linha de fecho. Bloco parado na tela 5–6 s (texto esperado em §1.1). | **N7** |
+| 8 | 1:42–1:58 | WEB | Abrir o link `EXPLORER:` que o próprio plugin devolveu. Mostrar a transferência de `1 USDC` e então **rolar até a lista de contas da transação** — a reference não está lá. A ressalva do plano 7 fica verificada na tela. | **N8** |
+| 9 | 1:58–2:14 | TG | Telegram: `confirmo o pagamento da INV-DEMO-A` → resposta com `USDC: PAID ✅` e o bloco `🧾 RECIBO` encaminhável (texto em §1.2). Parar no recibo. | **N9** |
+| 10 | 2:14–2:28 | PI | Terminal: `cat ~/plugins/invoice-status/manifest.toml`. Parar na linha `permissions = ["http_client", "config_read"]`. | **N10** |
+| 11 | 2:28–2:44 | TG | Telegram: `avisa quando a INV-DEMO-B pagar` → o agente confirma o vigia. Em seguida `quais lembretes tenho?` → lista `pixzclaw-watch-INV-DEMO-B`. | **N11** |
+| 12 | 2:44–2:56 | PI | Terminal, comando final já digitado: `zeroclaw plugin list` (volta à abertura, fecha o círculo). Cursor piscando. Fade de áudio, corte seco. | **N12** |
 
-**Soma:** 10 + 16 + 18 + 12 + 18 + 12 + 18 + 14 + 16 + 20 + 22 = **176 s = 2:56** ✅
+**Soma:** 10 + 16 + 16 + 10 + 18 + 10 + 22 + 16 + 16 + 14 + 16 + 12 = **176 s = 2:56** ✅
+
+### 1.0 Por que este roteiro mudou depois de um pagamento real
+
+A versão anterior encenava um pagamento **parcial** de 1 de 10 USDC e mostrava
+`UNDERPAID ⚠️` detectado pela reference. Ela não sobreviveu ao contato com a
+mainnet.
+
+Pagando de verdade pela Phantom, medido na transação `3UQpJTip…`:
+
+```text
+REFERENCE presente na transação?  NÃO
+Memo presente?                    NÃO
+delta +181818 para o lojista      SIM
+```
+
+A Phantom lê a URI Solana Pay — mostrou o valor exato na tela, logo interpretou
+destino e valor — e depois monta uma transferência SPL comum, **descartando a
+conta de reference**. O trecho encenado do roteiro antigo não aconteceria com a
+carteira que a maioria dos clientes usa.
+
+O roteiro novo mostra o que o sistema realmente faz, e é material melhor: um
+produto lidando com o mundo real vale mais que um produto encenado no caso
+feliz. Também é a única versão que alguém consegue reproduzir.
 
 ### 1.1 Texto exato esperado no plano 7
 
-Do `README.md` do `invoice-status` (caso UNDERPAID, saída verbatim de `fetch_and_status`), adaptado aos números desta demo:
+Saída verbatim de `status_unreferenced_match`, com os números desta demo:
 
 ```text
 INVOICE: INV-DEMO-A
-REF: A6vpxfrrsje…
-USDC: UNDERPAID ⚠️ (recebido 1 de 10 USDC — faltam 9) latest=⟨CONFIRMAR: 11 chars da assinatura⟩…
-EXPLORER: https://solscan.io/tx/⟨CONFIRMAR: assinatura completa⟩
+USDC: PROVÁVEL ⚠️ (recebido 1 em ⟨data⟩ — valor, moeda e destino batem com esta fatura, mas a transação NÃO carrega a reference: a carteira do pagador não a incluiu. Isso é indício, não prova. Se você emitiu outra fatura do mesmo valor, este pagamento pode ser da outra.)
 PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)
-OVERALL: PENDING (USDC não confirmado por valor)
+OVERALL: PENDING (indício de pagamento, sem prova de vínculo com esta fatura)
+```
+```text
+REF: https://solscan.io/account/⟨reference completa⟩
+EXPLORER: https://solscan.io/tx/⟨assinatura completa⟩
+```
+```text
+👉 Só você pode fechar isso: se confere que este pagamento é da fatura INV-DEMO-A, responda "confirmo o pagamento da INV-DEMO-A" e eu registro com comprovante.
 ```
 
-Três coisas que **têm que** estar ausentes nesse bloco, e que valem ser notadas na edição (não custa tempo de fala):
-- **não** existe bloco `🧾 RECIBO` — recibo só sai em fatura liquidada;
-- **não** existe a linha `[sistema] Fatura liquidada …` — logo o vigia do cron continuaria valendo;
-- a linha `PIX: PENDING` diz, na própria saída, que a ferramenta não enxerga o SPI do banco.
+Três ausências que valem ser notadas na edição (não custam tempo de fala):
+- **não** existe bloco `🧾 RECIBO` — indício não gera comprovante;
+- **não** existe a linha `[sistema] Fatura liquidada …` — o vigia continuaria valendo;
+- a linha `PIX: PENDING` diz, na própria saída, que a ferramenta não enxerga o SPI.
 
-**Formatação confirmada no código-fonte.** `fmt_amount()` em `crates/solana-wasm-core/src/status.rs:258` formata com `{x:.6}` e depois corta os zeros à direita e o ponto órfão. Logo 1.0 → `1`, 10.0 → `10`, 9.0 → `9`. A saída é literalmente `recebido 1 de 10 USDC — faltam 9`. Não precisa ajustar a narração N7.
+**Os identificadores vão dentro de bloco de código de propósito.** O host redacta
+base58 de alta entropia solto no chat e ignora conteúdo dentro de URLs `https://`
+— por isso a reference viaja como URL do Solscan, completa, em vez de truncada.
+Custo assumido: URL dentro de cerca não é clicável no Telegram. No plano 8, copie
+e cole no navegador do desktop; não tente tocar no link.
+
+### 1.2 Texto exato esperado no plano 9
+
+Saída verbatim de `status_from_declared_tx` após a confirmação do lojista:
+
+```text
+INVOICE: INV-DEMO-A
+USDC: PAID ✅ (valor conferido na transação informada: 1 de 1 USDC — vínculo com a fatura informado por você, não pela chain: esta transação não carrega a reference)
+PIX: PENDING (tool não vê SPI do banco; use pix_marked_paid=true se confirmou)
+OVERALL: USDC conferido na transação informada; vínculo com a fatura afirmado pelo operador
+```
+```text
+REF: https://solscan.io/account/⟨reference⟩
+EXPLORER: https://solscan.io/tx/⟨assinatura⟩
+```
+```text
+👉 Encaminhe o bloco abaixo ao cliente como comprovante.
+```
+```text
+🧾 RECIBO — INVOICE #INV-DEMO-A
+✅ Pago em USDC (Solana)
+Valor: 1 USDC (R$ equivalente na fatura)
+Data: ⟨data UTC⟩
+🔗 https://solscan.io/tx/⟨assinatura⟩
+```
+
+O lojista **não digita o hash**: o agente o toma da linha `EXPLORER:` da resposta
+anterior. Se ele pedir o hash na tela, o SOUL não foi carregado — pare a gravação
+e rode o reinstalador antes de continuar.
+
+### 1.3 Cotação e custo
+
+`brl_per_usdc = 5.5`, então **R$ 5,50 = exatamente 1,000000 USDC**. Número redondo
+na tela, e o custo real da gravação é 1 USDC — o mesmo que o roteiro antigo
+gastava no pagamento parcial.
 
 ### 1.2 Sem muleta na frase
 
@@ -69,37 +137,43 @@ Ritmo de referência: **150 palavras/min = 2,5 palavras/s**. Cada bloco traz `pa
 > **N1** — 19 palavras → **7,6 s** (plano: 10 s)
 > "A Raspberry Pi 3 running a real ZeroClaw agent. Three WebAssembly plugins, wasm32-wasip2. No slides — terminal and phone."
 
-> **N2** — 29 palavras → **11,6 s** (plano: 16 s)
-> "The merchant charges in reais, from Telegram. Fifty-five reais, invoice INV-DEMO-A. The agent calls brl_usdc_invoice: one invoice, two payment rails — PIX in reais, and ten USDC on Solana."
+> **N2** — 32 palavras → **12,8 s** (plano: 16 s)
+> "The merchant charges in reais, from Telegram. Five reais fifty, invoice INV-DEMO-A. The agent picks the tool itself and asks permission first. One invoice, two payment rails — PIX in reais, one USDC on Solana."
 
-> **N3** — 43 palavras → **17,2 s** (plano: 18 s)
-> "The PIX string is a real EMV payload with its CRC — the customer pastes it into any Brazilian bank app. The Solana QR carries a full Solana Pay URL, with a reference derived deterministically from the invoice id and the merchant pubkey."
+> **N3** — 38 palavras → **15,2 s** (plano: 16 s)
+> "The PIX string is a real EMV payload with its CRC — it pastes into any Brazilian bank app. The Solana QR carries a full Solana Pay URL, with a reference derived from the invoice id and the merchant key."
 
-> **N4** — 27 palavras → **10,8 s** (plano: 12 s)
-> "One honest note: this plugin cannot see PIX settle. Bank transfers are not on-chain. Only a human marks PIX as paid — the tool never infers it."
+> **N4** — 24 palavras → **9,6 s** (plano: 10 s)
+> "A ceiling the agent cannot exceed, and a destination it cannot change. Prompt injection can ask for a different wallet. The plugin refuses."
 
 > **N5** — 43 palavras → **17,2 s** (plano: 18 s)
-> "Now the Solana rail, for real, on mainnet. The invoice asks for ten USDC. I'm going to pay one — a partial payment, same reference. Signing in Phantom, on my phone. The agent never touches this: it holds no key and signs nothing."
+> "The customer scans, on a second phone. Phantom opens with the destination and the amount already filled in — one USDC, real money, mainnet. The agent never touches this. It holds no key and signs nothing."
 
-> **N6** — 19 palavras → **7,6 s** (plano: 12 s)
-> "Back in Telegram: did INV-DEMO-A pay? The agent calls invoice_status. It derives the same reference, and asks the chain."
+> **N6** — 20 palavras → **8,0 s** (plano: 10 s)
+> "Back in Telegram, plain language: did INV-DEMO-A pay? Nothing else — no hash, no arguments, no tool name."
 
-> **N7** — 43 palavras → **17,2 s** (plano: 18 s)
-> "There it is. UNDERPAID. Received one of ten USDC — nine short. That number is not a guess: the plugin pulled the transaction, summed the merchant's USDC balance delta, pre versus post, and compared. A signature alone would never have produced this line."
+> **N7** — 52 palavras → **20,8 s** (plano: 22 s)
+> "And here is the interesting part. Phantom dropped the reference. It built a plain transfer, so there is nothing on the reference to find. The plugin found the payment anyway, in the merchant's own account — and refuses to call it paid. Right amount, right wallet. Evidence, not proof."
 
-> **N8** — 30 palavras → **12,0 s** (plano: 14 s)
-> "Same transaction on Solscan: one USDC. It also refuses to bluff — if the RPC won't return the transaction, it degrades to signature-only and says the amount was not verified."
+> **N8** — 38 palavras → **15,2 s** (plano: 16 s)
+> "Check it. The money is there — one USDC. Now the accounts in that transaction: the reference is not among them. The explorer shows exactly the gap the plugin just described. It was not being cautious. It was being accurate."
 
-> **N9** — 28 palavras → **11,2 s** (plano: 16 s)
-> "This is the whole permission surface of invoice_status: HTTP, and config read. Two JSON-RPC reads. No key, no signing path, no write to any chain. Custody tier zero."
+> **N9** — 40 palavras → **16,0 s** (plano: 16 s)
+> "The merchant is the one who knows. They confirm, and only then does it settle — with a receipt to forward, and a line saying the link came from a human, not from the chain. Same standing as marking PIX paid."
 
-> **N10** — 43 palavras → **17,2 s** (plano: 20 s)
-> "Tell it to watch the invoice and the agent schedules a job on ZeroClaw's native cron, allowed to call two tools: invoice_status and cron_remove. While the invoice is pending it stays silent. When the value clears it sends the receipt and deletes itself."
+> **N10** — 27 palavras → **10,8 s** (plano: 14 s)
+> "This is the whole permission surface: HTTP, and config read. No key, no signing path, no write to any chain. Custody tier zero."
 
-> **N11** — 51 palavras → **20,4 s** (plano: 22 s)
-> "Three plugins, one shared core, no solana-sdk anywhere — it doesn't build for wasm32-wasip2, so base58, SHA-256 and the JSON-RPC shapes are hand-written and host-tested. PIX and USDC as two rails on one invoice, and an amount the merchant can actually check. Code and the pull request are in the description."
+> **N11** — 38 palavras → **15,2 s** (plano: 16 s)
+> "Ask it to watch an invoice and it schedules a job on ZeroClaw's native cron. While the invoice is pending it stays silent. When the value clears it sends the receipt and deletes itself."
 
-**Total falado:** 375 palavras → **150 s** de fala dentro de 176 s de vídeo. Sobram ~26 s de respiro, distribuídos nas pausas entre planos. Se atrasar, o bloco com mais gordura é **N3** (pode terminar em "…any Brazilian bank app.").
+> **N12** — 45 palavras → **18,0 s** (plano: 12 s → **corte a última frase se estourar**)
+> "Three plugins, one shared core, no solana-sdk — it doesn't build for wasm32-wasip2, so base58, SHA-256 and the JSON-RPC shapes are hand-written and host-tested. Two rails on one invoice, and a number the merchant can check. Code in the description."
+
+**Total falado:** 417 palavras → **167 s** de fala dentro de 176 s. A margem é menor
+que na versão anterior porque N7 e N8 carregam o argumento central. Se atrasar,
+corte nesta ordem: última frase de N12, depois a última de N8 ("It was not being
+cautious…" — dói, mas é a que menos informa), depois a segunda de N3.
 
 ---
 
@@ -110,37 +184,42 @@ Português rende ~15% mais sílabas por palavra que o inglês. Os tempos abaixo 
 > **N1 (PT)** — 20 palavras → **8,6 s** (plano: 10 s)
 > "Um Raspberry Pi 3 rodando um agente ZeroClaw de verdade. Três plugins WebAssembly, wasm32-wasip2. Sem slides — terminal e celular."
 
-> **N2 (PT)** — 30 palavras → **12,9 s** (plano: 16 s)
-> "O lojista cobra em reais, pelo Telegram. Cinquenta e cinco reais, fatura INV-DEMO-A. O agente chama o brl_usdc_invoice: uma fatura, dois trilhos — PIX em reais, e dez USDC na Solana."
+> **N2 (PT)** — 31 palavras → **13,3 s** (plano: 16 s)
+> "O lojista cobra em reais, pelo Telegram. Cinco e cinquenta, fatura INV-DEMO-A. O agente escolhe a ferramenta sozinho e pede permissão antes. Uma fatura, dois trilhos — PIX em reais, um USDC na Solana."
 
-> **N3 (PT)** — 40 palavras → **17,2 s** (plano: 18 s)
-> "O código PIX é um payload EMV de verdade, com CRC — o cliente cola em qualquer banco brasileiro. O QR da Solana carrega a URL Solana Pay inteira, com uma reference derivada do id da fatura e da pubkey do lojista."
+> **N3 (PT)** — 36 palavras → **15,5 s** (plano: 16 s)
+> "O código PIX é um payload EMV de verdade, com CRC — cola em qualquer banco brasileiro. O QR da Solana carrega a URL Solana Pay inteira, com a reference derivada do id da fatura e da chave do lojista."
 
-> **N4 (PT)** — 27 palavras → **11,6 s** (plano: 12 s)
-> "Uma ressalva honesta: este plugin não enxerga o PIX cair. Transferência bancária não existe on-chain. Só um humano marca o PIX como pago — a ferramenta nunca deduz."
+> **N4 (PT)** — 23 palavras → **9,9 s** (plano: 10 s)
+> "Um teto que o agente não passa e um destino que ele não troca. Injeção de prompt pode pedir outra carteira. O plugin recusa."
 
-> **N5 (PT)** — 41 palavras → **17,6 s** (plano: 18 s)
-> "Agora o trilho Solana, de verdade, na mainnet. A fatura pede dez USDC. Eu vou pagar um — pagamento parcial, mesma reference. Assinando no Phantom, no celular. O agente não encosta nisso: não tem chave e não assina nada."
+> **N5 (PT)** — 40 palavras → **17,2 s** (plano: 18 s)
+> "O cliente escaneia, num segundo celular. A Phantom abre com destino e valor já preenchidos — um USDC, dinheiro real, mainnet. O agente não encosta nisso. Não tem chave e não assina nada."
 
-> **N6 (PT)** — 19 palavras → **8,2 s** (plano: 12 s)
-> "De volta ao Telegram: a INV-DEMO-A pagou? O agente chama o invoice_status. Ele deriva a mesma reference e pergunta pra blockchain."
+> **N6 (PT)** — 19 palavras → **8,2 s** (plano: 10 s)
+> "De volta ao Telegram, em português comum: a INV-DEMO-A pagou? Só isso — sem hash, sem argumento, sem nome de função."
 
-> **N7 (PT)** — 41 palavras → **17,6 s** (plano: 18 s)
-> "Aí está. UNDERPAID. Recebido um de dez USDC — faltam nove. Esse número não é chute: o plugin buscou a transação, somou o delta de saldo USDC do lojista, antes e depois, e comparou. Uma assinatura sozinha nunca produziria essa linha."
+> **N7 (PT)** — 48 palavras → **20,6 s** (plano: 22 s)
+> "E aqui está a parte interessante. A Phantom descartou a reference. Montou uma transferência comum, então não há nada na reference pra achar. O plugin achou o pagamento assim mesmo, na conta do próprio lojista — e se recusa a chamar de pago. Indício, não prova."
 
-> **N8 (PT)** — 30 palavras → **12,9 s** (plano: 14 s)
-> "A mesma transação no Solscan: um USDC. E ele também não blefa — se o RPC não devolver a transação, ele degrada para 'assinatura ok' e diz que o valor não foi conferido."
+> **N8 (PT)** — 37 palavras → **15,9 s** (plano: 16 s)
+> "Confere. O dinheiro está lá — um USDC. Agora as contas dessa transação: a reference não está entre elas. O explorer mostra exatamente a lacuna que o plugin acabou de descrever. Ele não estava sendo cauteloso. Estava sendo exato."
 
-> **N9 (PT)** — 28 palavras → **12,0 s** (plano: 16 s)
-> "Esta é a superfície de permissão inteira do invoice_status: HTTP e leitura de config. Duas leituras JSON-RPC. Sem chave, sem caminho de assinatura, sem escrita em chain nenhuma. Custódia tier zero."
+> **N9 (PT)** — 37 palavras → **15,9 s** (plano: 16 s)
+> "Quem sabe é o lojista. Ele confirma, e só então liquida — com recibo pra encaminhar, e uma linha dizendo que o vínculo veio de um humano, não da chain. Mesmo status de marcar o PIX como pago."
 
-> **N10 (PT)** — 45 palavras → **19,3 s** (plano: 20 s)
-> "Peça pra ele vigiar a fatura e o agente agenda um job no cron nativo do ZeroClaw, autorizado a chamar duas tools: invoice_status e cron_remove. Enquanto a fatura está pendente, ele fica em silêncio. Quando o valor cai, manda o recibo e se apaga."
+> **N10 (PT)** — 25 palavras → **10,7 s** (plano: 14 s)
+> "Esta é a superfície de permissão inteira: HTTP e leitura de config. Sem chave, sem caminho de assinatura, sem escrita em chain nenhuma. Custódia tier zero."
 
-> **N11 (PT)** — 51 palavras → **21,9 s** (plano: 22 s)
-> "Três plugins, um core compartilhado, zero solana-sdk — ele não compila para wasm32-wasip2, então base58, SHA-256 e as formas do JSON-RPC são escritas à mão e testadas no host. PIX e USDC como dois trilhos de uma fatura só, e um valor que o lojista consegue conferir. Código e pull request na descrição."
+> **N11 (PT)** — 36 palavras → **15,5 s** (plano: 16 s)
+> "Peça pra ele vigiar uma fatura e o agente agenda um job no cron nativo do ZeroClaw. Enquanto está pendente, ele fica em silêncio. Quando o valor cai, manda o recibo e se apaga."
 
-**Total falado (PT):** 372 palavras → **160 s** dentro de 176 s. Margem menor que na versão EN: **não improvise frase extra em PT**. Se estourar, corte a segunda metade de N3 e a última frase de N10.
+> **N12 (PT)** — 42 palavras → **18,0 s** (plano: 12 s → **corte a última frase se estourar**)
+> "Três plugins, um core compartilhado, zero solana-sdk — não compila para wasm32-wasip2, então base58, SHA-256 e as formas do JSON-RPC são escritas à mão e testadas no host. Dois trilhos numa fatura só, e um número que o lojista confere. Código na descrição."
+
+**Total falado (PT):** 374 palavras → **161 s** dentro de 176 s. **Não improvise frase
+extra em PT.** Se estourar, corte na ordem: última frase de N12, última de N8,
+segunda de N3.
 
 ---
 
@@ -159,49 +238,42 @@ Português rende ~15% mais sílabas por palavra que o inglês. Os tempos abaixo 
 
 ### 4.2 Dinheiro e cadeia
 - [ ] Carteira do pagador (celular, Phantom) com **≥ 2,5 USDC** de mainnet e **≥ 0,01 SOL** para taxa e eventual criação de ATA. ⟨CONFIRMAR: saldo real disponível⟩.
-- [ ] Valor exato do teste on-chain: **1,000000 USDC**. Fatura: **10 USDC** (R$ 55,00). Falta esperada: **9**.
-- [ ] `invoice_id` da demo: **`INV-DEMO-A`**. O da gravação de segurança: **`INV-DEMO-B`**.
+- [ ] Valor da demo: fatura de **R$ 5,50 = 1,000000 USDC** (cotação 5.5). Custo real da gravação: **1 USDC**.
+- [ ] `invoice_id` da demo: **`INV-DEMO-A`**. Segurança: **`INV-DEMO-B`**. Vigia (plano 11): **`INV-DEMO-B`**.
 - [ ] Conta de token USDC do lojista (`merchant_solana`) já existente — se não existir, a primeira transferência cria a ATA e custa mais SOL; o plugin lida com isso (não há entrada `pre`), mas leva alguns segundos a mais.
+- [ ] **Só uma fatura aberta com valor de 1 USDC.** Se houver outra, a varredura por valor encontra as duas e o plano 7 sai com `ATENÇÃO: 2 transferências deste mesmo valor` — que é o comportamento correto, e uma cena diferente da roteirizada. Use ids diferentes **e valores diferentes** nos ensaios (R$ 5,50 na gravação, R$ 6,05 nos ensaios).
 
-### 4.3 QR de pagamento parcial (a parte que precisa ser montada antes)
-O QR da própria fatura carrega `amount=10` e o Phantom **não deixa editar** o valor de um transfer request. Para pagar 1 de 10 mantendo **a mesma reference** (é isso que faz o `invoice_status` encontrar a transação), monte antes:
+### 4.3 Nada para montar antes — o QR da fatura é o QR do pagamento
 
-1. Emita a `INV-DEMO-A` **uma vez, em ensaio**, no mesmo bot e com o mesmo `merchant_solana`. A reference é determinística — `bs58(sha256("zc-inv-v1" ‖ invoice_id ‖ "|" ‖ merchant))` — então ela será **idêntica** na gravação.
-2. Copie o link do QR da Solana no Telegram (o `https://api.qrserver.com/...?data=solana%3A...`).
-3. Decodifique o percent-encoding num editor de texto e extraia o valor de `reference=`.
-4. **Já montado para esta demo.** Carteira `GX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo`,
-   reference `A6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd`:
+A versão anterior deste roteiro montava um QR de pagamento parcial à mão, porque
+a Phantom não deixa editar o valor de um transfer request. Isso saiu junto com o
+`UNDERPAID` encenado (ver §1.0). Agora o plano 5 usa **o QR que o próprio card
+emitiu**, sem preparação:
 
-   ```
-   solana:GX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo?amount=1&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=A6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd&label=PixZClaw&message=INV-DEMO-A
-   ```
+1. No Telegram, toque em `📷 Toque para abrir o QR do Solana Pay` — abre a imagem.
+2. Leia essa imagem com a câmera do **segundo** aparelho. Não dá para escanear a
+   própria tela, e o card diz isso ao cliente.
+3. A Phantom abre com destino e valor já preenchidos. Confirmar.
 
-5. QR pronto — abra numa aba do desktop e deixe em tela cheia:
+Medido: a Phantom interpreta a URI (mostra o valor exato) e depois monta uma
+transferência SPL comum, **sem a conta de reference**. É essa lacuna que os
+planos 7 e 8 mostram.
 
-   ```
-   https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=8&data=solana%3AGX11xnCq794z4TdkLkdoBdkpCt3ioF4AYF9qjMJtEewo%3Famount%3D1%26spl-token%3DEPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v%26reference%3DA6vpxfrrsjenGU5hfiir6GuwxojfTMhsWxtBy9WRk8qd%26label%3DPixZClaw%26message%3DINV-DEMO-A
-   ```
-6. No plano 5, escaneie esse QR com o scanner do Phantom (a gravação de tela do celular mostra o visor da câmera lendo a tela do desktop — não precisa de segunda câmera).
-
-**Como extrair a reference completa — resolvido.** Não copie do QR nem do chat (o
-host redacta base58 de alta entropia). Rode o verificador, que imprime a
-reference derivada antes de qualquer veredito:
+**Ensaio a seco, sem gastar nada.** O verificador imprime a reference derivada
+antes de qualquer veredito e confirma que a conta está zerada:
 
 ```bash
 cd examples/verify-live
-cargo run -- --merchant <merchant_solana> --invoice INV-DEMO-A --expected 10
+cargo run -- --merchant <merchant_solana> --invoice INV-DEMO-A --expected 1
 ```
 
-Ele usa a mesma `derive_reference` do plugin, então a reference impressa é
-exatamente a que o `invoice_status` vai procurar. A saída já traz o link do
-Solscan também — útil para conferir, antes de gravar, que a conta ainda está
-zerada. Rodar de novo depois do pagamento confirma que o `UNDERPAID` do plano 7
-vai sair, sem depender do Telegram para descobrir.
-
-**Nota de honestidade:** isso é literalmente o que acontece quando um cliente paga menos do que a fatura pede. Não é encenação de resultado — a transação é real, o valor é real, e a verificação não sabe de nada disso.
+Usa a mesma `derive_reference` do plugin, então a reference impressa é exatamente
+a que o `invoice_status` vai procurar. Serve também para conferir o RPC antes de
+gravar — se ele falhar aqui, falharia ao vivo.
 
 ### 4.4 Gravação de segurança (faça isto ANTES do REC)
-- [ ] Emita a **`INV-DEMO-B`** de 10 USDC e pague **1 USDC** nela pelo mesmo método, **no mínimo 15 min antes** de gravar. Se o pagamento ao vivo do plano 5 não indexar a tempo, os planos 6–8 são refeitos com `INV-DEMO-B` e ninguém percebe: o resultado on-chain é o mesmo e igualmente real.
+- [ ] Emita a **`INV-DEMO-B`** de R$ 5,50 e pague pelo mesmo método, **no mínimo 15 min antes** de gravar. Se o pagamento ao vivo do plano 5 não indexar a tempo, os planos 6–9 são refeitos com `INV-DEMO-B` e ninguém percebe: o resultado on-chain é o mesmo e igualmente real.
+- [ ] **Atenção ao conflito com §4.2:** duas faturas de 1 USDC pagas no mesmo dia fazem a varredura por valor achar as duas. Para a gravação de segurança, use **R$ 6,05 (1,1 USDC)** na `INV-DEMO-B`, e o valor volta a ser único.
 
 ### 4.5 Telas, janelas e legibilidade
 - [ ] Terminal SSH: janela em **1600×900** dentro de um desktop **1920×1080**, fonte monoespaçada em **22 pt** (mínimo 20 pt), ~100 colunas. Tema escuro de alto contraste, **transparência desligada**, sem imagem de fundo.
@@ -222,7 +294,7 @@ vai sair, sem depender do Telegram para descobrir.
 ### 4.7 Áudio
 - [ ] Grave a narração **depois** do vídeo, num take separado, lendo a §2 (ou §3). Não tente narrar ao vivo: você vai errar comando e narração juntos.
 - [ ] Ambiente sem eco, microfone a ~20 cm, sem ar-condicionado ligado.
-- [ ] Um take por bloco (N1…N11), arquivo separado por bloco: facilita re-locução se o texto do plano 7 sair diferente do previsto.
+- [ ] Um take por bloco (N1…N12), arquivo separado por bloco: facilita re-locução se o texto do plano 7 sair diferente do previsto.
 
 ---
 
@@ -232,15 +304,18 @@ vai sair, sem depender do Telegram para descobrir.
 
 | Risco | O que acontece na tela | Plano B (sem reiniciar a gravação) |
 |---|---|---|
-| **A transação Solana demora a confirmar / o RPC ainda não indexou a reference** | Plano 7 volta `USDC: PENDING (nenhuma assinatura no reference)` | 1) Espere e repita a pergunta — o "PENDING" é uma resposta válida e você **corta o intervalo na edição**. 2) Se em ~2 min não indexar, refaça os planos 6–8 com a **`INV-DEMO-B`** já paga na §4.4. 3) Nunca narre um valor que não apareceu: reescreva N7 com o que a tela mostra. |
-| **O RPC devolve assinatura mas não a transação** | Sai `USDC: SIG OK (valor não verificado — RPC não retornou a transação)` | **Isso é conteúdo bom, não erro.** Grave esse plano, use como plano 8-bis, e reaproveite a frase de N8 ("it refuses to bluff"). Depois repita a pergunta até sair o UNDERPAID e use os dois planos em sequência. |
-| **O bot não responde** | Nenhuma mensagem chega depois do envio | 1) Reenvie **exatamente a mesma mensagem** e corte o tempo morto. 2) Se o LLM respondeu sem chamar a tool, reenvie com a forma imperativa: `Use invoice_status com invoice_id INV-DEMO-A e expected_usdc 10.` 3) Se continuar mudo: `zeroclaw service restart` no SSH — esse plano de restart **não entra no vídeo**, e o `invoice_id` é determinístico, então nada se perde. |
-| **Saída sai com `[REDACTED_…]`** | Link do QR ou reference mascarados | Reenvie com `Sem redact.` na mensagem. Se persistir, confira a config do agente (o redact é do host, não do plugin). O plano 3 pode ser gravado mostrando **só o QR** — o QR sobrevive à redação porque está percent-encoded. |
-| **O Pi trava / OOM / undervoltage** | SSH congela ou o serviço morre | 1) `zeroclaw service restart`. 2) Se o SSH cair, reconecte e rode `clear` — o plano 1 pode ser regravado em 10 s. 3) Nada de estado se perde: a reference é derivada, não armazenada, e a transação já está na chain. 4) Se o Pi cair **depois** do pagamento, os planos 8 (Solscan) e 9 (manifest) podem ser gravados a qualquer momento, inclusive noutro dia. |
-| **A rede cai** | Telegram sem entrega, RPC com timeout | O pagamento, se já foi enviado, **é permanente**. Grave o plano 8 (Solscan) mais tarde, do desktop, com a assinatura anotada. Planos 1 e 9 são locais no Pi e não dependem de internet além do SSH. |
-| **O Phantom recusa o transfer request** | Erro no plano 5 | Confira saldo de SOL para taxa. Alternativa: abrir a mesma URL `solana:` como **deep link** direto no celular em vez de escanear o QR. |
-| **O texto do UNDERPAID sai diferente do previsto** | Números com casas decimais, ou ordem de linha diferente | **Ajuste a narração, nunca o vídeo.** Regrave só o bloco N7 com o texto que apareceu. É por isso que o áudio é feito por bloco. |
-| **Estourou 3:00 na montagem** | — | Corte nesta ordem: (1) plano 10 inteiro (cron), (2) plano 4, (3) segunda metade do plano 3. **Planos 5, 6 e 7 são intocáveis.** |
+| **A transação demora a indexar** | Plano 7 volta `USDC: PENDING (nenhuma assinatura no reference)` e **nada** de PROVÁVEL | 1) Espere e repita a pergunta — corte o intervalo na edição. 2) Se em ~2 min não sair, refaça os planos 6–9 com a **`INV-DEMO-B`** já paga na §4.4. 3) Nunca narre o que não apareceu: reescreva N7 com o texto da tela. |
+| **A carteira do pagador INCLUIU a reference** | Plano 7 sai `USDC: PAID ✅` direto, sem a ressalva | **Isso não é erro, é o caminho bom** — e derruba os planos 7, 8 e 9 como roteirizados. Grave assim mesmo: vira uma demo mais curta e mais forte (prova criptográfica, sem intervenção humana). Reescreva N7 para "the reference is in the transaction, so the chain answers by itself", corte o plano 9 inteiro e ganhe 16 s. Só a Phantom foi medida descartando a reference; outra carteira pode não descartar. |
+| **Sai `SIG OK (valor não verificado)`** | O RPC não devolveu a transação | **Conteúdo bom.** Grave, use como 8-bis com a frase "it refuses to bluff", e repita a pergunta até sair o veredito previsto. |
+| **O bot não responde** | Nenhuma mensagem chega | 1) Reenvie a **mesma** mensagem e corte o tempo morto. 2) Se ele respondeu sem chamar a tool, reenvie na forma imperativa: `Use invoice_status com invoice_id INV-DEMO-A e expected_usdc 1.` 3) Se continuar mudo: `zeroclaw service restart` — esse plano **não entra no vídeo**, e o `invoice_id` é determinístico, nada se perde. |
+| **Sai `[REDACTED_…]`** | Reference ou link mascarados | **Não existe `Sem redact` — não tente.** A redação é do host e ignora instrução no chat; ela pula conteúdo dentro de URLs `https://`, e é por isso que a reference viaja como link do Solscan. Se aparecer redação mesmo assim, os plugins estão desatualizados: pare e reinstale a release corrente. |
+| **`ATENÇÃO: N transferências deste mesmo valor`** | Plano 7 traz o aviso de ambiguidade | Havia outra fatura do mesmo valor paga na janela (ver §4.2). Emita a fatura de novo com **outro valor** e refaça os planos 2 e 5–9. Alternativa honesta: **mantenha** e narre — mostra o sistema recusando um palpite. Custa uma frase nova em N7. |
+| **O agente pede o hash na tela** | Plano 9 não fecha sozinho | O SOUL não foi carregado. Pare, rode o reinstalador (ele instala SOUL e skills), `zeroclaw service restart`, e refaça o plano 9. |
+| **O Pi trava** | SSH congela ou o serviço morre | 1) `zeroclaw service restart`. 2) Plano 1 se regrava em 10 s. 3) Nada de estado se perde: a reference é derivada, não armazenada, e a transação já está na chain. 4) Planos 8 e 10 podem ser gravados noutro dia. |
+| **A rede cai** | Telegram sem entrega, RPC com timeout | O pagamento, se enviado, **é permanente**. Grave o plano 8 depois, com a assinatura anotada. Planos 1 e 10 são locais no Pi. |
+| **O Phantom recusa** | Erro no plano 5 | Confira saldo de SOL para a taxa. Alternativa: abrir a URI `solana:` como deep link no celular em vez de escanear. |
+| **O texto sai diferente do previsto** | Ordem de linha ou números diferentes | **Ajuste a narração, nunca o vídeo.** Regrave só o bloco afetado — é para isso que o áudio é por bloco. |
+| **Estourou 3:00** | — | Corte nesta ordem: (1) plano 11 inteiro (cron), (2) plano 4, (3) segunda metade do plano 3. **Planos 5, 7, 8 e 9 são intocáveis** — são o argumento inteiro. |
 
 ---
 
@@ -351,11 +426,11 @@ ffmpeg -i FINAL.mp4 -vf "subtitles=legendas.srt:force_style='FontName=Arial,Font
 
 ## 7. Metadados de submissão
 
-**Título (77 caracteres):**
-> PixZClaw — a ZeroClaw agent that checks the amount on-chain (PIX + USDC, Telegram)
+**Título (79 caracteres):**
+> PixZClaw — a ZeroClaw agent that knows what it proved and what it only observed
 
 **Título alternativo, mais direto ao ponto:**
-> Invoice 10 USDC, pay 1: a ZeroClaw plugin that answers UNDERPAID with the real number
+> Phantom dropped the Solana Pay reference. The plugin found the payment and still refused to call it paid.
 
 **Descrição:**
 
@@ -367,12 +442,25 @@ A Brazilian merchant issues one invoice in BRL and gets paid on either of two
 rails: PIX (BRL) or USDC on Solana via Solana Pay. Custody T0/T1 only — the
 agent holds no private key and signs nothing.
 
-In this video the invoice asks for 10 USDC and I pay 1 USDC for real on mainnet.
-invoice_status finds the transaction through the invoice's deterministic
-reference, calls getTransaction, sums the merchant's USDC pre/post token balance
-deltas, and answers UNDERPAID with the actual amount received and the exact
-shortfall. It never reports PAID without a confirmed amount: when the RPC will
-not return the transaction it degrades to "signature ok, value not verified".
+The payment in this video is real, on mainnet, and so is the complication.
+Phantom reads the Solana Pay URI — it fills in the exact amount — and then
+builds a plain SPL transfer, dropping the reference account. So there is nothing
+on the invoice's reference to find, and the first version of this demo would
+have shown a paid invoice reported as pending.
+
+invoice_status looks in the merchant's own token account instead, finds a
+transfer of the exact invoiced amount, and reports it as PROVÁVEL — evidence,
+not proof. Right amount, right mint, right wallet; no cryptographic link to this
+invoice, because the wallet did not put one there. Two invoices for the same
+amount would be indistinguishable that way, and the verdict says so rather than
+rounding up to "paid". The merchant — the one party who does know — confirms,
+and only then does it settle, with a receipt that records that the link was
+asserted by a human.
+
+Everything it can prove, it proves by arithmetic: getTransaction, the merchant's
+USDC pre/post token balance deltas, exact integer comparison, no tolerance band.
+When the RPC will not return a transaction it degrades to "signature ok, value
+not verified" rather than guessing.
 
 The PIX rail is not verifiable by software and the product says so out loud —
 bank settlement is not on-chain, so a human operator confirms PIX. The tool
@@ -387,10 +475,10 @@ Plugins:
 No solana-sdk anywhere: it does not build for wasm32-wasip2, so base58, the
 SHA-256 reference derivation, the Solana Pay grammar, PIX EMV/CRC16 and the
 JSON-RPC shapes are hand-written in a shared core and tested on the host.
-101 host tests, no network.
+152 host tests, no network.
 
 Repo:      https://github.com/capitv/pixzclaw-pi
-Release:   https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.1-plugins
+Release:   https://github.com/capitv/pixzclaw-pi/releases/tag/v0.5.13-plugins
 Landing:   https://capitv.github.io/pixzclaw-pi/
 PR:        https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/123
 ZeroClaw:  https://docs.zeroclawlabs.ai/master/en/introduction.html
@@ -412,15 +500,19 @@ Built for the ZeroClaw × Superteam Brasil bounty. MIT OR Apache-2.0.
 
 ```
 P1  0:00 PI   uname -m && zeroclaw plugin list
-P2  0:10 TG   "Cobra R$ 55 do cliente, fatura INV-DEMO-A. Use brl_usdc_invoice. Sem redact."
-P3  0:26 TG   scroll: PIX copia-e-cola + QR Solana
-P4  0:44 TG   rodapé: teto R$ 1000 · destino travado=sim
-P5  0:56 PH   Phantom → QR parcial (1 USDC, mesma reference) → confirmar
-P6  1:14 TG   "A INV-DEMO-A pagou? Use invoice_status com expected_usdc 10."
-P7  1:26 TG   UNDERPAID ⚠️ (recebido 1 de 10 USDC — faltam 9)     ← plano intocável
-P8  1:44 WEB  solscan → 1 USDC
-P9  1:58 PI   cat ~/.zeroclaw/plugins/invoice-status/manifest.toml
-P10 2:14 TG   "avisa quando a INV-DEMO-A pagar" + "quais lembretes tenho?"
-P11 2:34 PI   zeroclaw plugin list  (fecha o círculo)
+P2  0:10 TG   "Cobra R$ 5,50 do cliente, pedido INV-DEMO-A"     (aprovar a tool)
+P3  0:26 TG   scroll: PIX copia-e-cola + os dois links de QR
+P4  0:42 TG   rodapé: teto R$ 1000 · destino travado=sim
+P5  0:52 PH   2o celular lê o QR do card → Phantom c/ 1 USDC → confirmar
+P6  1:10 TG   "A INV-DEMO-A pagou?"                    (só isso, sem argumento)
+P7  1:20 TG   PROVÁVEL ⚠️ + ressalva + linha de fecho   ← INTOCÁVEL, 5-6 s parado
+P8  1:42 WEB  solscan: 1 USDC entrou / reference NÃO está nas contas
+P9  1:58 TG   "confirmo o pagamento da INV-DEMO-A" → PAID ✅ + 🧾 RECIBO
+P10 2:14 PI   cat ~/plugins/invoice-status/manifest.toml
+P11 2:28 TG   "avisa quando a INV-DEMO-B pagar" + "quais lembretes tenho?"
+P12 2:44 PI   zeroclaw plugin list  (fecha o círculo)
 FIM 2:56
 ```
+
+**Se der errado no P7 e sair `PAID ✅` direto:** a carteira incluiu a reference.
+Não é erro — grave, corte o P9, e reescreva N7. Ver §5.
