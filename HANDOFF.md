@@ -344,10 +344,19 @@ zeroclaw service restart
 ### Telegram — testes
 ```text
 configurar pixzclaw
-Cobra R$ 10 invoice demo-1. Use brl_usdc_invoice. Sem redact.
-Me mostra o caixa. Use pixzclaw_brief.
-demo-1 pagou? Use invoice_status.
+Cobra R$ 55 do cliente, pedido INV-DEMO-A
+Me mostra o caixa
+A INV-DEMO-A pagou?
 ```
+
+**Sem muletas, de propósito.** Versões antigas destes testes mandavam
+`Use brl_usdc_invoice. Sem redact.` — as duas partes eram lixo:
+
+- `Use brl_usdc_invoice` — medido: o agente escolhe a tool sozinho a partir da
+  frase natural. Dizer o nome da tool no vídeo entrega uma história pior do que
+  a verdade, e foi o próprio dono do projeto que apontou isso.
+- `Sem redact` — nunca fez nada. O redact do host não é o plugin `redact-text` e
+  não obedece instrução no prompt (ver seção de problemas conhecidos).
 
 ---
 
