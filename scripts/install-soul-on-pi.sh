@@ -18,10 +18,31 @@ echo "==> Baixando SOUL e skills do GitHub..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-curl -fsSL "$REPO_RAW/skills/SOUL.md" -o "$TMP/SOUL.md"
-mkdir -p "$TMP/skills/pixzclaw-onboard" "$TMP/skills/pixzclaw-daily"
-curl -fsSL "$REPO_RAW/skills/pixzclaw-onboard/SKILL.md" -o "$TMP/skills/pixzclaw-onboard/SKILL.md"
-curl -fsSL "$REPO_RAW/skills/pixzclaw-daily/SKILL.md" -o "$TMP/skills/pixzclaw-daily/SKILL.md"
+# Pega o repositório inteiro em vez de uma lista de arquivos escrita à mão.
+#
+# A lista à mão já falhou: nomeava pixzclaw-onboard e pixzclaw-daily, foi
+# escrita antes de pixzclaw-watch existir, e nunca foi atualizada. A skill do
+# vigia de pagamento ficou meses no repositório sem nunca chegar ao Pi, e nada
+# no processo apontava isso — o script terminava com "OK".
+#
+# Com o tarball, uma skill nova passa a ser instalada por existir.
+curl -fsSL "https://codeload.github.com/capitv/pixzclaw-pi/tar.gz/refs/heads/main" \
+  -o "$TMP/repo.tgz"
+tar -xzf "$TMP/repo.tgz" -C "$TMP"
+SRC=$(find "$TMP" -maxdepth 1 -type d -name 'pixzclaw-pi-*' | head -1)
+if [[ -z "$SRC" || ! -d "$SRC/skills" ]]; then
+  echo "ERRO: não achei skills/ no tarball do repositório." >&2
+  exit 1
+fi
+
+cp -f "$SRC/skills/SOUL.md" "$TMP/SOUL.md"
+mkdir -p "$TMP/skills"
+# Só diretórios de skill (cada um com seu SKILL.md); SOUL.md e README.md ficam
+# de fora — não são skills e o host não deve carregá-los como tal.
+for d in "$SRC"/skills/*/; do
+  [[ -f "$d/SKILL.md" ]] && cp -r "$d" "$TMP/skills/"
+done
+echo "    skills encontradas: $(ls "$TMP/skills" | tr '\n' ' ')"
 
 INSTALLED=0
 for WS in "${CANDIDATES[@]}"; do
